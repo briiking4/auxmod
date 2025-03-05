@@ -8,6 +8,8 @@ node_modules/.cache
 # testing
 /coverage
 
+/build
+
 
 # IDEs and editors
 /.idea
