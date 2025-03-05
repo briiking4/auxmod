@@ -5,7 +5,6 @@ import path from 'path';
 import querystring from 'querystring';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
-import cors_proxy from 'cors-anywhere';
 import OpenAI from "openai";
 import serverless from 'serverless-http';
 
@@ -169,17 +168,19 @@ let port = process.env.PORT || 3333
 console.log(`Listening on port ${port}. Go /login to initiate authentication flow.`)
 app.listen(port)
 
-// Listen on a specific host via the HOST environment variable
-var cors_host = '0.0.0.0';
-// Listen on a specific port via the PORT environment variable
-var cors_port = 8080;
+// think this is only needed for dev: not in prod w netlify
 
-cors_proxy.createServer({
-    originWhitelist: [], // Allow all origins
-    requireHeader: ['origin', 'x-requested-with'],
-    removeHeaders: ['cookie', 'cookie2']
-}).listen(cors_port, cors_host, function() {
-    console.log('Running CORS Anywhere on ' + cors_host + ':' + cors_port);
-});
+// // Listen on a specific host via the HOST environment variable
+// var cors_host = '0.0.0.0';
+// // Listen on a specific port via the PORT environment variable
+// var cors_port = 8080;
+
+// cors_proxy.createServer({
+//     originWhitelist: [], // Allow all origins
+//     requireHeader: ['origin', 'x-requested-with'],
+//     removeHeaders: ['cookie', 'cookie2']
+// }).listen(cors_port, cors_host, function() {
+//     console.log('Running CORS Anywhere on ' + cors_host + ':' + cors_port);
+// });
 
 export const handler = serverless(app);
