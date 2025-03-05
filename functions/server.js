@@ -46,7 +46,7 @@ function generateRandomString(length){
    return text;
  };
 
- app.get('/login', function(req, res) {
+ app.get('/api/login', function(req, res) {
    var state = generateRandomString(16);
    res.cookie(stateKey, state);
 
@@ -63,7 +63,7 @@ function generateRandomString(length){
 
  });
 
- app.get('/callback', async (req, res) => {
+ app.get('/api/callback', async (req, res) => {
   const code = req.query['code'];
 
   try {
@@ -123,7 +123,7 @@ app.post('/api/moderate-lyrics', async (req, res) => {
 });
 
 
-app.post('/refresh_token', async (req, res) => {
+app.post('/api/refresh_token', async (req, res) => {
   const refreshToken = req.body.refresh_token;
   console.log('Received refresh token:', req.body.refresh_token);
 
