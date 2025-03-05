@@ -16,7 +16,7 @@
     "@emotion/styled": "latest",
     "@mui/icons-material": "^6.4.0",
     "@mui/material": "latest",
-    "axios": "^1.7.9",
+    "axios": "^1.8.1",
     "bad-words": "^4.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
