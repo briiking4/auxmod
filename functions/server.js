@@ -15,9 +15,6 @@ import serverless from 'serverless-http';
 dotenv.config()
 
 
-const __dirname = path.resolve();
-
-
 var client_id = process.env.SPOTIFY_CLIENT_ID;
 var client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 const redirect_uri = process.env.REDIRECT_URI || 'http://localhost:3333/callback';
@@ -29,11 +26,11 @@ var stateKey = 'spotify_auth_state';
 var app = express();
 
 app.use(cors({
-  origin: 'https://briiking4.github.io',  // Allow all origins (* for testing purposes)
+  origin: 'https://auxmod.netlify.app/',  // Allow all origins (* for testing purposes)
   methods: ['GET', 'POST'],
 }));
 
-app.use(express.static(__dirname + '/build'))
+app.use(express.static('build'))
    .use(cookieParser());
 
    app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data
