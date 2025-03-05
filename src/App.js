@@ -13,6 +13,8 @@ import { setAccessToken } from './spotifyApi';
 
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 
+// Deploy: Did it! its still kinda going to localhost on the backend i dont think i changed the url in the button
+
 // login page - logo / name change
 // make a landing page?? or add stuff on the app login? 
 

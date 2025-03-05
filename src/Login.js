@@ -158,7 +158,7 @@ export default function Login({sendLoginStatus, sendAccessToken}) {
            <Button 
            variant="contained" 
            sx={{ minWidth: '102px', minHeight:'42px' }}
-           href="http://localhost:3333/login"         
+           href={`${process.env.REACT_APP_BACKEND_URL}/login`}    
            >
             Login with Spotify
            </Button>
