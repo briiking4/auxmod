@@ -205,7 +205,6 @@ export default function App() {
         tablet: '100%',  // Tablet 
         laptop: '1024px', // Laptop 
         desktop: '1200px', // Desktop devices
-        overflow: 'auto',
       },
       }}>
 

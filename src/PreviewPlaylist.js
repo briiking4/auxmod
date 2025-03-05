@@ -185,7 +185,11 @@ useEffect(() => {
           </TableHead>
         </Table>
 
-        <Box sx={{ maxHeight: 320, overflowY: "auto", overflowX: "hidden" }}>
+        <Box sx={{ maxHeight: 310, 
+        overflowY: "auto", 
+        overflowX: "hidden",
+        scrollbarColor: 'rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0)',
+      }}>
           <Table
             sx={{
               "& .MuiTableCell-root": { padding: "10px", border: "none" },

@@ -78,7 +78,6 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               display: 'flex',
               flexDirection: 'row',
               justifyContent: 'space-between',
-              mt: 2,
               '& .MuiButtonBase-root': { borderRadius: '50px' },
               p: 0,
               maxWidth:'400px'
