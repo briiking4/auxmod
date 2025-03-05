@@ -1,3 +1,4 @@
+import axios from 'axios';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -5,7 +6,6 @@ import querystring from 'querystring';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import cors_proxy from 'cors-anywhere';
-import axios from 'axios';
 import OpenAI from "openai";
 import serverless from 'serverless-http';
 
