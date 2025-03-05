@@ -13,14 +13,12 @@ import { setAccessToken } from './spotifyApi';
 
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 
-// Deploy: Did it! getting a 502 for some reason
+// Deploy: host backend on render
 
 // login page - logo / name change
 // make a landing page?? or add stuff on the app login? 
 
 // ADD: gtag google analytics 
-// CONT. TO TEST EDGE CASES
-
 
 export default function App() {
 
