@@ -1,5 +1,5 @@
 {
-  "homepage": "https://briiking4.github.io/auxmod/",
+  "homepage": "https://auxmod.netlify.app",
   "name": "auxmod",
   "version": "5.0.0",
   "private": true,
@@ -31,6 +31,7 @@
     "react": "latest",
     "react-dom": "latest",
     "react-scripts": "latest",
+    "serverless-http": "^3.2.0",
     "spotify-web-api-js": "^1.5.2"
   },
   "browserslist": {

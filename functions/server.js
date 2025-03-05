@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import cors_proxy from 'cors-anywhere';
 import axios from 'axios';
 import OpenAI from "openai";
+import serverless from 'serverless-http';
+
 
 
 
@@ -18,8 +20,8 @@ const __dirname = path.resolve();
 
 var client_id = process.env.SPOTIFY_CLIENT_ID;
 var client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-// var redirect_uri = 'http://localhost:3333/callback'; //DEV
-var redirect_uri = 'https://auxmod.onrender.com/callback'; // PROD
+const redirect_uri = process.env.REDIRECT_URI || 'http://localhost:3333/callback';
+
 
 
 var stateKey = 'spotify_auth_state';
@@ -182,3 +184,5 @@ cors_proxy.createServer({
 }).listen(cors_port, cors_host, function() {
     console.log('Running CORS Anywhere on ' + cors_host + ':' + cors_port);
 });
+
+export const handler = serverless(app);
