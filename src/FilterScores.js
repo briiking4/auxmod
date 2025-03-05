@@ -68,7 +68,7 @@ const FilterScores = async (songTitle, songArtist) => {
 
   async function checkModeration(lyrics) {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/moderate-lyrics`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/moderate-lyrics`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
