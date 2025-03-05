@@ -1,0 +1,1 @@
+{"version":3,"file":"static/css/main.437ab62c.css","mappings":"AAAA,KACI,kDAAqD,CAErD,QAAS,CADT,gBAEJ","sources":["index.css"],"sourcesContent":["body {\n    background: linear-gradient(180deg, #87CEEB, #FFD8A8);\n    min-height: 100vh; /* Ensure full height is covered */\n    margin: 0; /* Remove default margin */\n}\n  "],"names":[],"sourceRoot":""}

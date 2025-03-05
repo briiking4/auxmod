@@ -1,5 +1,6 @@
 {
-  "name": "material-ui-cra",
+  "homepage": "https://briiking4.github.io/cleanify2.2/",
+  "name": "cleanify2.2",
   "version": "5.0.0",
   "private": true,
   "proxy": "https://apresolve.spotify.com",
@@ -8,7 +9,8 @@
     "server": "node server.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "gh-pages -d build"
   },
   "dependencies": {
     "@emotion/react": "latest",
@@ -43,5 +45,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }

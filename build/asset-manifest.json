@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/cleanify2.2/static/css/main.437ab62c.css",
+    "main.js": "/cleanify2.2/static/js/main.61346bdc.js",
+    "static/media/logo.png": "/cleanify2.2/static/media/logo.1ea635fcccc910c4492d.png",
+    "static/media/default-prof.svg": "/cleanify2.2/static/media/default-prof.cce443ebce67b7f5df3657139e723749.svg",
+    "static/media/music-note.svg": "/cleanify2.2/static/media/music-note.74b216c749e4b8e467c0a2f4c4f29db0.svg",
+    "index.html": "/cleanify2.2/index.html",
+    "main.437ab62c.css.map": "/cleanify2.2/static/css/main.437ab62c.css.map",
+    "main.61346bdc.js.map": "/cleanify2.2/static/js/main.61346bdc.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.437ab62c.css",
+    "static/js/main.61346bdc.js"
+  ]
+}
