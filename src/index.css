@@ -1,0 +1,6 @@
+body {
+    background: linear-gradient(180deg, #87CEEB, #FFD8A8);
+    min-height: 100vh; /* Ensure full height is covered */
+    margin: 0; /* Remove default margin */
+}
+  

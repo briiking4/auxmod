@@ -1,0 +1,47 @@
+{
+  "name": "material-ui-cra",
+  "version": "5.0.0",
+  "private": true,
+  "proxy": "https://apresolve.spotify.com",
+  "scripts": {
+    "start": "react-scripts start",
+    "server": "node server.js",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "@emotion/react": "latest",
+    "@emotion/styled": "latest",
+    "@mui/icons-material": "^6.4.0",
+    "@mui/material": "latest",
+    "axios": "^1.7.9",
+    "bad-words": "^4.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "cors-anywhere": "^0.4.4",
+    "cors-proxy": "^1.0.3",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "openai": "^4.86.1",
+    "p-limit": "^6.2.0",
+    "path": "^0.12.7",
+    "querystring": "^0.2.1",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-scripts": "latest",
+    "spotify-web-api-js": "^1.5.2"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
