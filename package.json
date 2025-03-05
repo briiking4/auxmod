@@ -1,9 +1,8 @@
 {
   "homepage": "https://auxmod.onrender.com/",
-  "name": "cleanify2.2",
+  "name": "auxmod",
   "version": "5.0.0",
   "private": true,
-  "proxy": "https://apresolve.spotify.com",
   "scripts": {
     "start": "react-scripts start",
     "server": "node server.js",
