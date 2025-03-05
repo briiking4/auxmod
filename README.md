@@ -44,3 +44,4 @@ You can head back to the documentation and continue by browsing the [templates](
 # cleanify2.2
 # cleanify2.2
 # cleanify2.2
+# auxmod
