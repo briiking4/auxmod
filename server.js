@@ -6,6 +6,8 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import cors_proxy from 'cors-anywhere';
 import axios from 'axios';
+import OpenAI from "openai";
+
 
 
 dotenv.config()
@@ -14,8 +16,8 @@ dotenv.config()
 const __dirname = path.resolve();
 
 
-var client_id = process.env.REACT_APP_SPOTIFY_CLIENT_ID;
-var client_secret = process.env.REACT_APP_SPOTIFY_CLIENT_SECRET;
+var client_id = process.env.SPOTIFY_CLIENT_ID;
+var client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 // var redirect_uri = 'http://localhost:3333/callback'; //DEV
 var redirect_uri = 'https://briiking4.github.io/cleanify2.0/callback'; // PROD
 
@@ -100,6 +102,28 @@ function generateRandomString(length){
     res.redirect('/#error=invalid_token');
   }
 });
+
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, 
+});
+
+app.post('/api/moderate-lyrics', async (req, res) => {
+  const { lyrics } = req.body;
+
+  try {
+    const moderation = await openai.moderations.create({
+      model: "omni-moderation-latest",
+      input: lyrics,
+    });
+
+    res.json(moderation);
+  } catch (error) {
+    console.error("Error checking moderation:", error);
+    res.status(500).json({ error: "Failed to check moderation" });
+  }
+});
+
 
 app.post('/refresh_token', async (req, res) => {
   const refreshToken = req.body.refresh_token;

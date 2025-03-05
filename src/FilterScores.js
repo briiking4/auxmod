@@ -7,9 +7,6 @@ const FilterScores = async (songTitle, songArtist) => {
   console.log("props on mount" + songTitle);
   console.log("props on mount" + songArtist);
 
-  const openai = new OpenAI({
-    apiKey: process.env.REACT_APP_OPENAI_API_KEY, dangerouslyAllowBrowser: true
-  });
 
 
     async function fetchWithTimeout(url, options, timeout = 5000) {  // Timeout in ms
@@ -71,12 +68,22 @@ const FilterScores = async (songTitle, songArtist) => {
 
   async function checkModeration(lyrics) {
     try {
-        const moderation = await openai.moderations.create({
-            model: "omni-moderation-latest",
-            input: lyrics,
-        });
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/moderate-lyrics`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ lyrics }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch moderation results');
+      }
+  
+      const moderation = await response.json();
+      console.log("Moderation response:", moderation);
 
-        console.log("Full Moderation Response:", JSON.stringify(moderation, null, 2));
+      console.log("Full Moderation Response:", JSON.stringify(moderation, null, 2));
 
         if (moderation.results && moderation.results[0] && moderation.results[0].flagged) {
             const sexual_score = moderation.results[0].categories ? moderation.results[0].category_scores.sexual : false;
@@ -100,10 +107,6 @@ const FilterScores = async (songTitle, songArtist) => {
 
   const getModerationResults = async () => {
     console.log("GETTING SCORE")
-    // const apiUrl_mod = 'https://language.googleapis.com/v2/documents:moderateText';
-    // const apiUrl_entity = 'https://language.googleapis.com/v2/documents:analyzeEntities';
-    // const apiKey = process.env.REACT_APP_GOOGLE_NLP_API_KEY;  
-
     try{
       const lyrics = await getLyrics(songTitle, songArtist);
       console.log("LYRICS FROM GETSCORE FUNCTION")
@@ -115,9 +118,6 @@ const FilterScores = async (songTitle, songArtist) => {
       console.log("Theme Moderation", themeModeration)
 
       return {status: 'success', sexually_explicit: themeModeration.sexual , profanity: hasProfanity , violence: themeModeration.violence}
-
-
-
 
 
       // const mod_response = await fetch(`${apiUrl_mod}?key=${apiKey}`, {

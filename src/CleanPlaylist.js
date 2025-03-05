@@ -11,6 +11,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
 
   const cleanTrackCache = JSON.parse(localStorage.getItem('cleanTrackCache')) || {};
 
+
   const isValidTrack = (trackItem) => {
     const track = trackItem.track;
     if (!track) return false;

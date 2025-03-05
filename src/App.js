@@ -5,7 +5,6 @@ import Profile from './Profile';
 import StepToggle from './StepToggle';
 import ChoosePlaylist from './ChoosePlaylist';
 import SetFilters from './SetFilters';
-import ExcludedTracks from './ExcludedTracks';
 import SaveComponent from './SaveComponent';
 import Done from './Done';
 import Login from './Login';
