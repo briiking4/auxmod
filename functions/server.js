@@ -156,11 +156,11 @@ app.post('/refresh_token', async (req, res) => {
 });
 
 
-// AFTER defining routes:
-// production:
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'build', 'index.html'))
-});
+// // AFTER defining routes (removing not sure if i need this for netlify):
+// // production:
+// app.get('/*', (req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'build', 'index.html'))
+// });
 
 
 
