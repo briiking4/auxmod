@@ -13,10 +13,12 @@ import serverless from 'serverless-http';
 
 dotenv.config()
 
+let prod = false; 
+
 
 var client_id = process.env.SPOTIFY_CLIENT_ID;
 var client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-const redirect_uri = process.env.REDIRECT_URI || 'http://localhost:3333/callback';
+const redirect_uri = prod ? process.env.REDIRECT_URI : 'http://localhost:3333/api/callback';
 
 
 
@@ -87,7 +89,7 @@ function generateRandomString(length){
 
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
-    const frontendUri = process.env.FRONTEND_URI || 'http://localhost:3000';
+    const frontendUri = prod ? process.env.FRONTEND_URI : 'http://localhost:3000';
     res.redirect(
       `${frontendUri}/#${querystring.stringify({
         access_token,

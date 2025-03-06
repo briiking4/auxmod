@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import {Container, Typography, Button} from '@mui/material';
+import {Container, Typography, Button, Box} from '@mui/material';
 import Profile from './Profile';
 import StepToggle from './StepToggle';
 import ChoosePlaylist from './ChoosePlaylist';
@@ -205,18 +205,80 @@ export default function App() {
         tablet: '100%',  // Tablet 
         laptop: '1024px', // Laptop 
         desktop: '1200px', // Desktop devices
+        maxHeight: '100lvh',  // Full dynamic viewport height when avalible
+        minHeight: '100svh', // Minimum height based on smallest viewport height (address bar visible)
+        overflow: 'hidden', // Prevents overflow when viewport height changes
+        display: 'flex',   // Flexbox layout to adjust content inside
+        flexDirection: 'column', // Arrange components vertically
       },
       }}>
 
       { !loggedIn?
         <Login sendLoginStatus={handleLoginStatus} sendAccessToken={handleAccessToken}/>
       :
-      <>
+      <Box 
+      sx={{
+        width: '100%',
+        height: 'auto',
+        maxHeight: '100%',
+        overflow: 'visible',
+        display: 'flex',
+        flexDirection: 'column',
+        transform: 'scale(var(--scale, 1))',
+        transformOrigin: 'top center',
+      }}
+      ref={(el) => {
+        if (el) {
+          const setScale = () => {
+            // Use a small timeout to ensure accurate measurements
+            setTimeout(() => {
+              // Use visual viewport height which accounts for URL bar
+              const viewportHeight = window.visualViewport ? 
+                window.visualViewport.height - 48 : // Use visual viewport when available
+                window.innerHeight - 48; // Fallback
+                
+              const contentHeight = el.scrollHeight;
+              // Apply safety buffer
+              const scale = contentHeight > viewportHeight ? 
+                ((viewportHeight / contentHeight) * 0.95) : 1;
+              
+              el.style.setProperty('--scale', scale);
+            }, 50);
+          };
+          
+          // Initial calculation
+          setScale();
+          
+          // Update on resize
+          window.addEventListener('resize', setScale);
+          
+          // Handle visual viewport changes (for mobile browsers with dynamic URL bars)
+          if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', setScale);
+            window.visualViewport.addEventListener('scroll', setScale);
+          }
+          
+          // Handle content changes
+          const observer = new MutationObserver(setScale);
+          observer.observe(el, { childList: true, subtree: true });
+          
+          return () => {
+            window.removeEventListener('resize', setScale);
+            if (window.visualViewport) {
+              window.visualViewport.removeEventListener('resize', setScale);
+              window.visualViewport.removeEventListener('scroll', setScale);
+            }
+            observer.disconnect();
+          };
+        }
+      }}
+    >
+  
         <Profile sendUserInfo={handleUserInfo}/>
         <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
         {
           activeStep === 0 ? 
-          <ChoosePlaylist sendStatus={handleStepsStatus} sendChosenPlaylist={handleChosenPlaylist}/>
+            <ChoosePlaylist sendStatus={handleStepsStatus} sendChosenPlaylist={handleChosenPlaylist}/>
           :
           activeStep === 1 ?
           <SetFilters onApplyFilters={handleApplyFilters} chosenPlaylist={chosenPlaylist} sendChosenFilters={handleChosenFilters} sendStatus={handleStepsStatus} progress={cleaningProgress}/>
@@ -264,7 +326,7 @@ export default function App() {
           :
           <></>
         }
-      </>
+      </Box>
     }
 
   </Container>
