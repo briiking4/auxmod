@@ -196,35 +196,28 @@ export default function App() {
     setSavedPlaylist(id)
   }
 
+  
+
   return (
-<Container 
-  sx={{
-    p: '16px',
-    width: '100%',
-    height: '100dvh', // Dynamic viewport height - handles mobile browser bars
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  }}>
+    <Container 
+      sx={{
+        p:'16px',
+        maxWidth: {
+        mobile: '100%',  // Mobile 
+        tablet: '100%',  // Tablet 
+        laptop: '1024px', // Laptop 
+        desktop: '1200px', // Desktop devices
+        maxHeight: '100lvh',  // Full dynamic viewport height when avalible
+        minHeight: '100svh', // Minimum height based on smallest viewport height (address bar visible)
+        display: 'flex',   // Flexbox layout to adjust content inside
+        flexDirection: 'column', // Arrange components vertically
+      },
+      }}>
 
       { !loggedIn?
         <Login sendLoginStatus={handleLoginStatus} sendAccessToken={handleAccessToken}/>
       :
-      <Box 
-      sx={{
-        width: '100%',
-        flex: '1',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        // This is the key part - fit content to available space
-        '& > *': {
-          // Make sure children can be scaled down
-          maxHeight: '100%',
-        }
-      }}
-     > 
-  
+      <>
         <Profile sendUserInfo={handleUserInfo}/>
         <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
         {
@@ -277,7 +270,7 @@ export default function App() {
           :
           <></>
         }
-      </Box>
+      </>
     }
 
   </Container>
