@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect} from 'react';
-import {Container, Typography, Button, Box} from '@mui/material';
+import {Container, Typography, Button, Box, keyframes} from '@mui/material';
 import logo from './logo.png'
 import spotifyApi from './spotifyApi';
 
@@ -113,6 +113,18 @@ export default function Login({sendLoginStatus, sendAccessToken}) {
       sendLoginStatus(true);
     }
   }, [state.loggedIn]);
+
+  const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
   
 
   return (
@@ -128,7 +140,9 @@ export default function Login({sendLoginStatus, sendAccessToken}) {
       objectFit:'contain'
     }}
   >
-    <Box>
+    <Box sx={{
+          animation: `${fadeIn} 1s ease-out`
+    }}>
       <img
         src={logo}
         alt="logo"
