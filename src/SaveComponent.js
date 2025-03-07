@@ -4,6 +4,12 @@ import { Button, Box, Typography, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PreviewPlaylist from './PreviewPlaylist';
 import spotifyApi from './spotifyApi';
+import ProfanityIcon from './ProfanityIcon';
+import ViolenceIcon from './ViolenceIcon';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import DiscFullIcon from '@mui/icons-material/DiscFull';
+
+
 
 export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilters, userId, sendSavedPlaylist }) {
   const [view, setView] = useState('included');
@@ -69,9 +75,6 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
         </IconButton>
 
         <Typography variant="h6">{cleanedPlaylist?.name}</Typography>
-        <Typography variant="caption">
-          Filters: {chosenFilters?.join(', ')}
-        </Typography>
       </Box>
 
       {cleanedPlaylist ? (
@@ -118,18 +121,58 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
             </Button>
           </Box>
 
-          {/* Track Info Message */}
-          <Box sx={{ mb: 2, flexShrink: 0 }}>
-            <Typography variant="caption">
-              {view === 'included'
-                ? displayedTracks.length > 0
-                  ? 'Passed filter(s) or found a clean replacement'
-                  : 'No tracks passed the filter(s) and no clean version replacement was found.'
-                : displayedTracks.length > 0
-                  ? 'Failed filter(s), lacks a valid clean version replacement, or unable to proccess'
-                  : 'All tracks either passed filter(s) or a clean version replacement was found!'}
-            </Typography>
-          </Box>
+            {/* Filter Message */}
+            <Box sx={{ mb: 2, flexShrink: 0 }}>
+              <Typography variant="caption">
+                {view === 'included'
+                  ? displayedTracks.length > 0
+                    ? chosenFilters.includes('Profanity')
+                      ? 'Passed filter(s) or found a clean replacement'
+                      : 'Passed filter(s)'
+                    : chosenFilters.includes('Profanity')
+                      ? 'No tracks passed the filter(s) and no clean version replacement was found.'
+                      : 'No tracks passed the filter(s)'
+                  : displayedTracks.length > 0
+                    ? chosenFilters.includes('Profanity')
+                      ? 'Failed filter(s) or lacks a valid clean version replacement'
+                      : 'Failed filter(s)'
+                    : chosenFilters.includes('Profanity')
+                      ? 'All tracks either passed filter(s) or a clean version replacement was found!'
+                      : 'All tracks passed the filter(s)!'}
+              </Typography>
+              {/* Table Reason Ledgend */}
+              {
+                view === 'excluded' && (
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      alignItems: 'center', 
+                      flexWrap: 'wrap', 
+                      gap: 2, 
+                      px: 2
+                    }}
+                  >
+                    {[
+                      { icon: <ProfanityIcon />, label: 'Profanity' },
+                      { icon: <ViolenceIcon />, label: 'Violence' },
+                      { icon: <LocalFireDepartmentIcon />, label: 'Sexual' },
+                    ]
+                    .filter(item => chosenFilters.includes(item.label)) // Show only chosen filters
+                    .concat({ icon: <DiscFullIcon />, label: 'Unable to verify' }) // Always include this
+                    .map((item, index) => (
+                      <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <IconButton size="small" disabled>
+                          {item.icon}
+                        </IconButton>
+                        <Typography variant="caption">{item.label}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )
+              }
+
+        </Box>
 
           {/* Playlist View - Takes available space */}
           <Box sx={{ 

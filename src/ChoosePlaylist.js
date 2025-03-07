@@ -55,7 +55,7 @@ export default function ChoosePlaylist({sendStatus, sendChosenPlaylist}) {
             </IconButton>
           </Box>
 
-          {/* Preview takes remaining height */}
+          {/* Preview the playlist that was selected. (Preview comp takes the emaining height) */}
           <Box sx={{ flex: 1, overflow: 'hidden' }}>
             <Preview sendStatus={handleStepStatus} item={selectedPlaylist}/>
           </Box>

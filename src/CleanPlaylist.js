@@ -125,7 +125,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       tracksNeedingCleanSearch: []
     };
     
-    const batchSize = 20; // Process 20 tracks at a time
+    const batchSize = 50; 
     const batches = [];
     
     for (let i = 0; i < tracks.length; i += batchSize) {
@@ -136,7 +136,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     const totalTracks = tracks.length;
     
     for (const batch of batches) {
-      const limit = pLimit(5); // Process 5 tracks concurrently within batch
+      const limit = pLimit(20); 
       
       const tasks = batch.map(trackItem => limit(async () => {
         try {
@@ -212,101 +212,73 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     return results;
   };
   
-  // Find clean versions of tracks in optimized batches
   const findCleanVersions = async (tracks) => {
-    // Group by artists to potentially reduce API calls
-    const artistGroupedTracks = {};
-    tracks.forEach(track => {
-      const artistName = track.artists[0].name.toLowerCase();
-      if (!artistGroupedTracks[artistName]) {
-        artistGroupedTracks[artistName] = [];
-      }
-      artistGroupedTracks[artistName].push(track);
-    });
-    
     const foundCleanTracks = [];
     let processedCount = 0;
     const totalTracks = tracks.length;
     
-    // Process groups of artists with controlled concurrency
-    const artistGroups = Object.values(artistGroupedTracks);
-    const artistLimit = pLimit(3); // Process 3 artists concurrently
+    // Process tracks in batches
+    const batchSize = 25; // Process 25 tracks at a time
+    const batches = [];
     
-    const artistTasks = artistGroups.map(artistTracks => artistLimit(async () => {
-      // For each artist, batch tracks in groups of 5
-      const artistBatches = [];
-      for (let i = 0; i < artistTracks.length; i += 5) {
-        artistBatches.push(artistTracks.slice(i, i + 5));
-      }
+    for (let i = 0; i < tracks.length; i += batchSize) {
+      batches.push(tracks.slice(i, i + batchSize));
+    }
+    
+    // Process each batch
+    for (const batch of batches) {
+      const limit = pLimit(15); // Process 15 tracks concurrently
       
-      for (const batch of artistBatches) {
-        const trackLimit = pLimit(2); // Process 2 tracks per artist batch concurrently
+      const tasks = batch.map(track => limit(async () => {
+        const name = track.name.toLowerCase();
+        const artist = track.artists[0].name.toLowerCase();
+        const cacheKey = `${name}-${artist}`;
         
-        const trackTasks = batch.map(track => trackLimit(async () => {
-          const name = track.name.toLowerCase();
-          const artist = track.artists[0].name.toLowerCase();
-          const cacheKey = `${name}-${artist}`;
+        // Check cache first
+        if (cleanTrackCache[cacheKey] && cleanTrackCache[cacheKey].data) {
+          return { found: true, track: cleanTrackCache[cacheKey].data };
+        }
+        
+        try {
+          const query = `track:"${name.replace(/"/g, '')}" artist:"${artist.replace(/"/g, '')}"`;
           
-          try {
-            const query = `track:"${name.replace(/"/g, '')}" artist:"${artist.replace(/"/g, '')}"`;
-            
-            const searchResult = await rateLimitedApi.call(
-              spotifyApi.search.bind(spotifyApi), 
-              query, 
-              ['track'], 
-              { limit: 5 }
-            );
-            
-            // Find the best match
-            const cleanTrack = searchResult.tracks.items.find(item => {
-              const isClean = !item.explicit;
-              const isSameArtist = item.artists.some(a => 
-                a.name.toLowerCase() === artist || 
-                artist.includes(a.name.toLowerCase())
-              );
-              
-              const trackNameLower = item.name.toLowerCase();
-              const isExactMatch = trackNameLower === name;
-              const isCleanVersion = trackNameLower.includes('clean') || 
-                                    trackNameLower.includes('radio edit') ||
-                                    trackNameLower.includes('radio version');
-              
-              return isClean && isSameArtist && (isExactMatch || isCleanVersion);
-            });
-            
-            if (cleanTrack) {
-              // Cache the clean track with timestamp
-              setCachedTrack(cacheKey, cleanTrack);
-              return { found: true, track: cleanTrack };
-            }
-            
-            return { found: false };
-          } catch (error) {
-            console.error('Error finding clean track:', error);
-            return { found: false, error };
-          } finally {
-            processedCount++;
-            // Update progress (50-95%)
-            const progressPercentage = 50 + ((processedCount / totalTracks) * 45);
-            onProgressUpdate(Math.round(progressPercentage));
+          const searchResult = await rateLimitedApi.call(
+            spotifyApi.search.bind(spotifyApi), 
+            query, 
+            ['track'], 
+            { limit: 5 }
+          );
+          
+          // Find the best match
+          const cleanTrack = searchResult.tracks.items.find(item => 
+            !item.explicit && 
+            item.artists.some(a => a.name.toLowerCase() === artist)
+          );
+          
+          if (cleanTrack) {
+            setCachedTrack(cacheKey, cleanTrack);
+            return { found: true, track: cleanTrack };
           }
-        }));
-        
-        const batchResults = await Promise.all(trackTasks);
-        
-        // Collect found clean tracks
-        batchResults.forEach(result => {
-          if (result.found) {
-            foundCleanTracks.push(result.track);
-          }
-        });
-        
-        // Small delay between artist batches
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-    }));
+          
+          return { found: false };
+        } catch (error) {
+          console.error('Error finding clean track:', error);
+          return { found: false, error };
+        } finally {
+          processedCount++;
+          const progressPercentage = 50 + ((processedCount / totalTracks) * 45);
+          onProgressUpdate(Math.round(progressPercentage));
+        }
+      }));
+      
+      const batchResults = await Promise.all(tasks);
+      batchResults.forEach(result => {
+        if (result.found) {
+          foundCleanTracks.push(result.track);
+        }
+      });
+    }
     
-    await Promise.all(artistTasks);
     return foundCleanTracks;
   };
   

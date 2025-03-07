@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect} from 'react';
-import {Box, Container, Typography }from '@mui/material';
+import {Box, Container, Typography, Skeleton }from '@mui/material';
 import spotifyApi from './spotifyApi';
 import defaultProf from './default-prof.svg'
 
@@ -60,14 +60,21 @@ export default function Profile({sendUserInfo}) {
                 background: "#B3B3B3",
             }}
         >
+          {userProfile.profPic === '' ?
+          <Skeleton variant="circular" />
+          :
           <img 
-            src={userProfile.profPic} 
-            alt="Profile" 
-            style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover', // Ensures the image fills the Box while maintaining aspect ratio
-            }}></img>
+          src={userProfile.profPic} 
+          alt="Profile" 
+          style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover', // Ensures the image fills the Box while maintaining aspect ratio
+          }}></img>
+
+
+          }
+
         </Box>
         <Typography variant="h6">{userProfile.name}</Typography>
     </Container>

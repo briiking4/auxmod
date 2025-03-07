@@ -59,9 +59,9 @@ export default function StepToggle({stepsStatus, activeStep}) {
 
 // Defining the Steps
   const steps = [
-    { label: 'Step 1', description: 'Choose Playlist', isComplete: stepsStatus[0]},
+    { label: 'Step 1', description: 'Pick a Playlist', isComplete: stepsStatus[0]},
     { label: 'Step 2', description: 'Set Filters', isComplete: stepsStatus[1] },
-    { label: 'Step 3', description: 'Review & Save',  isComplete: stepsStatus[2]},
+    { label: 'Step 3', description: 'Save New Playlist',  isComplete: stepsStatus[2]},
   ];
 
   return (

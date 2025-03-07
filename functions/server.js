@@ -27,7 +27,7 @@ var stateKey = 'spotify_auth_state';
 var app = express();
 
 app.use(cors({
-  origin: 'https://auxmod.netlify.app/',  // Allow all origins (* for testing purposes)
+  origin: '*',  // Allow all origins (* for testing purposes, https://auxmod.netlify.app/ for prod)
   methods: ['GET', 'POST'],
 }));
 

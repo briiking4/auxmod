@@ -74,7 +74,9 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
       <Typography variant="h6">Exclude songs with:</Typography>
       <Box sx={{ mt: 1, mb: 2, display: 'flex', alignItems: 'center' }}>
         <Typography variant="body2" sx={{ mr: 1 }}>Select one or more:</Typography>
-        <Tooltip title="Your original playlist will stay untouched. We'll create a new filtered playlist for you.">
+        <Tooltip title="Profanity filter will swap for clean/radio version replacements if available." 
+        enterTouchDelay={0} 
+        leaveTouchDelay={3000}>
           <InfoIcon fontSize="small" color="secondary.main" />
         </Tooltip>
       </Box>
