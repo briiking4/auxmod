@@ -1,21 +1,20 @@
 import * as React from 'react';
-import { useState, useEffect} from 'react';
-import {Container, Typography, Button, Box, keyframes} from '@mui/material';
-import logo from './logo.png'
+import { useState, useEffect } from 'react';
+import { Container, Typography, Button, Box, keyframes } from '@mui/material';
+import logo from './logo.png';
 import spotifyApi from './spotifyApi';
 
+export default function Login({ sendLoginStatus, sendAccessToken }) {
+  const [state, setState] = useState({
+    loggedIn: false,
+    token: '',
+    refreshToken: '',
+    expiresAt: null,
+  });
+  
+  // Add state to control when content is visible
+  const [contentLoaded, setContentLoaded] = useState(false);
 
-
-export default function Login({sendLoginStatus, sendAccessToken}) {
-
-    const [state, setState] = useState({
-        loggedIn: false,
-        token: '',
-        refreshToken: '',
-        expiresAt: null,
-    });
-
-    
   const getHashParams = () => {
     const hashParams = {};
     const r = /([^&;=]+)=?([^&;]*)/g;
@@ -27,12 +26,11 @@ export default function Login({sendLoginStatus, sendAccessToken}) {
     return hashParams;
   };
 
-   // Refresh the access token using the refresh token
-   const refreshAccessToken = async (refreshToken) => {
+  // Refresh the access token using the refresh token
+  const refreshAccessToken = async (refreshToken) => {
     try {
       console.log('Refreshing access token...');
       console.log('refresh token is', refreshToken);
-
 
       // state of access token is empty
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/refresh_token`, {
@@ -98,6 +96,9 @@ export default function Login({sendLoginStatus, sendAccessToken}) {
       console.log("Expires at", calculatedExpiresAt);
       scheduleTokenRefresh(calculatedExpiresAt, refreshToken); // Use the calculated expiry time
     }
+    
+    // Set content as loaded after a small delay to ensure CSS has loaded
+    setTimeout(() => setContentLoaded(true), 100);
   }, []);
 
   // Update access token in parent component when it changes
@@ -115,69 +116,79 @@ export default function Login({sendLoginStatus, sendAccessToken}) {
   }, [state.loggedIn]);
 
   const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
-
-  
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  `;
 
   return (
     <Container
-    id="login"
-    sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      textAlign: 'center',
-      minHeight: '90vh',
-      objectFit:'contain'
-    }}
-  >
-    <Box sx={{
-          animation: `${fadeIn} 1s ease-out`
-    }}>
-      <img
-        src={logo}
-        alt="logo"
-        style={{ width: '50%', marginBottom: '1rem'}}
-      />
-      <Typography
-        variant="h4"
-        component="h1"
-        fontWeight="bold"
-        gutterBottom
-      >
-        auXmod
-      </Typography>
-    </Box>
-    <Container
-        sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'center',
-            my: 4,
-            '& .MuiButtonBase-root': {
-            borderRadius: '50px',
-            },
-            p:0,
-        }}
+      id="login"
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        minHeight: '90vh',
+        objectFit: 'contain',
+      }}
     >
-           <Button 
-           variant="contained" 
-           sx={{ minWidth: '102px', minHeight:'42px' }}
-           href={`${process.env.REACT_APP_BACKEND_URL}/login`}    
-           >
-            Login with Spotify
-           </Button>
+      {/* Only render content when contentLoaded is true */}
+      {contentLoaded && (
+        <>
+          <Box sx={{
+            animation: `${fadeIn} 1s ease-out`,
+            opacity: 0,  // Start with opacity 0
+            animationFillMode: 'forwards'  // Keep the end state of the animation
+          }}>
+            <img
+              src={logo}
+              alt="logo"
+              style={{ 
+                width: '50%', 
+                marginBottom: '1rem',
+              }}
+            />
+            <Typography
+              variant="h4"
+              component="h1"
+              fontWeight="bold"
+              gutterBottom
+            >
+              auXmod
+            </Typography>
+          </Box>
+          <Container
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              my: 4,
+              '& .MuiButtonBase-root': {
+                borderRadius: '50px',
+              },
+              p: 0,
+              opacity: 0,  // Start with opacity 0
+              animation: `${fadeIn} 1s ease-out 0.3s`,  // Delay button animation
+              animationFillMode: 'forwards'  // Keep the end state of the animation
+            }}
+          >
+            <Button 
+              variant="contained" 
+              sx={{ minWidth: '102px', minHeight: '42px' }}
+              href={`${process.env.REACT_APP_BACKEND_URL}/login`}    
+            >
+              Login with Spotify
+            </Button>
+          </Container>
+        </>
+      )}
     </Container>
-  </Container>
-     
   );
 }
