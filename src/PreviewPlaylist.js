@@ -261,7 +261,7 @@ useEffect(() => {
                                       enterTouchDelay={0} 
                                       leaveTouchDelay={3000}
                                       >
-                                         <ProfanityIcon/>
+                                         <span><ProfanityIcon/></span>
                                       </Tooltip>
                                   )}
                                   {track.reason.includes('Violence') && (
@@ -269,7 +269,7 @@ useEffect(() => {
                                       enterTouchDelay={0} 
                                       leaveTouchDelay={3000}
                                       >
-                                          <ViolenceIcon/>
+                                          <span><ViolenceIcon/></span>
                                       </Tooltip>
                                   )}
                                   {track.reason.includes('Sexual') && (
