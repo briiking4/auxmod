@@ -78,6 +78,12 @@ useEffect(() => {
       }
   }, [id, tracksList]);
 
+  useEffect(() =>{
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [view])
+
   console.log(tracks);
 
   const isValidTrack = (trackItem) => {
