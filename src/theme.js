@@ -34,11 +34,10 @@ const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        html, body: {
+        body: {
           background: 'linear-gradient(180deg, #87CEEB, #FFD8A8)',
           backgroundAttachment: 'fixed',
           backgroundRepeat: 'no-repeat',
-          minHeight: '100vh',
         },
       },
     },
