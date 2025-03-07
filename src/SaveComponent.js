@@ -122,7 +122,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
           </Box>
 
             {/* Filter Message */}
-            <Box sx={{ mb: 2, flexShrink: 0 }}>
+            <Box sx={{ mb: 2, flexShrink: 0, textAlign:'center'}}>
               <Typography variant="caption">
                 {view === 'included'
                   ? displayedTracks.length > 0
