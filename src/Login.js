@@ -120,14 +120,26 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
     if (state.token) {
       sendAccessToken(state.token);
     }
-  }, [state.token]);
+  }, [state.token, sendAccessToken]);
 
   // Update login status in parent component when loggedIn changes
   useEffect(() => {
     if (state.loggedIn) {
       sendLoginStatus(true);
     }
-  }, [state.loggedIn]);
+  }, [state.loggedIn, sendLoginStatus]);
+
+  // Define animations
+  const spinIn = keyframes`
+    from {
+      opacity: 0;
+      transform: rotate(-720deg) scale(0.5);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+  `;
 
   const fadeIn = keyframes`
     from {
@@ -151,36 +163,46 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
         textAlign: 'center',
         minHeight: '90vh',
         objectFit: 'contain',
-        // Add a background color that matches your app's theme
-        // This helps prevent the white flash
         bgcolor: 'background.default'
       }}
     >
       {contentLoaded && (
         <>
           <Box sx={{
-            animation: `${fadeIn} 1.2s ease-out`,
-            opacity: 0,
-            animationFillMode: 'forwards',
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center'
           }}>
-            <img
-              src={logo}
-              alt="logo"
-              style={{ 
-                width: '40%', 
-                marginBottom: '1rem',
-                display: 'block'
+            <Box
+              sx={{
+                animation: `${spinIn} 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                opacity: 0,
+                animationFillMode: 'forwards',
+                mb: 1
               }}
-            />
+            >
+              <img
+                src={logo}
+                alt="logo"
+                style={{ 
+                  width: '50%', 
+                  marginBottom: '1rem',
+                  display: 'block',
+                  margin: '0 auto'
+                }}
+              />
+            </Box>
             <Typography
               variant="h4"
               component="h1"
               fontWeight="bold"
               gutterBottom
+              sx={{
+                opacity: 0,
+                animation: `${fadeIn} 1s ease-out 1s`,
+                animationFillMode: 'forwards'
+              }}
             >
               auXmod
             </Typography>
@@ -196,7 +218,7 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
               },
               p: 0,
               opacity: 0,
-              animation: `${fadeIn} 1.2s ease-out 0.5s`,  // Increased delay for button
+              animation: `${fadeIn} 1s ease-out 2s`,  // Button appears last
               animationFillMode: 'forwards'
             }}
           >
