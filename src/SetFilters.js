@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import {Container, Typography, Button, IconButton, Box, LinearProgress} from '@mui/material';
+import {Container, Typography, Button, IconButton, Box, LinearProgress, Alert, Tooltip} from '@mui/material';
 import Filter from './Filter';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import InfoIcon from '@mui/icons-material/Info';
 
 // Create a simple event emitter outside component to avoid re-renders
 const filterState = {
@@ -70,7 +71,13 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
         </IconButton>
       </Box>
 
-      <Typography variant="h6">Exclude Songs with:</Typography>
+      <Typography variant="h6">Exclude songs with:</Typography>
+      <Box sx={{ mt: 1, mb: 2, display: 'flex', alignItems: 'center' }}>
+        <Typography variant="body2" sx={{ mr: 1 }}>Select one or more:</Typography>
+        <Tooltip title="Your original playlist will stay untouched. We'll create a new filtered playlist for you.">
+          <InfoIcon fontSize="small" color="secondary.main" />
+        </Tooltip>
+      </Box>
 
       <Filter sendModerationFiltersStatus={handleFilterUpdate} type="moderation" loading={loading}/>
 
