@@ -38,7 +38,6 @@ export default function PreviewPlaylist({ id, tracksList, view }) {
 
 
 useEffect(() => {
-  console.log("CLEAN UP PREV PLAYLIST")
   return () => {
     setTracks([]); // Cleanup tracks when component unmounts
     audioRef.current.pause(); // Stop any playing audio
@@ -48,17 +47,13 @@ useEffect(() => {
 
   useEffect(() => {
     setLoading(true);
-    console.log("TRACKS OR ID HAVE CHANGED")
 
     const setTrackList = async () => {
       if (tracksList) {
-        console.log("Using tracksList prop");
         setTracks(tracksList);
         setLoading(false);
       } else if (id) {
-        console.log("Fetching tracks for playlist using id");
         const playlistData = await getPlaylist(id);
-        console.log("Playlist Data from PreviewPlaylist Compt: ", playlistData)
         if (playlistData) {
           setTracks(playlistData.tracks);
           setLoading(false);
@@ -67,7 +62,6 @@ useEffect(() => {
         }
 
       } else {
-        console.log("No tracksList or id provided");
         setLoading(false);
       }
     };
@@ -84,8 +78,6 @@ useEffect(() => {
     }
   }, [view])
 
-  console.log(tracks);
-
   const isValidTrack = (trackItem) => {
     const track = trackItem.track;
     if (!track) return false;
@@ -101,7 +93,6 @@ useEffect(() => {
   };
 
   async function getPlaylist(playlistId) {
-    console.log("Getting tracks for playlist");
   
     let allTracks = [];
     let offset = 0;
@@ -114,11 +105,8 @@ useEffect(() => {
           offset,
           limit,
         });
-
-        console.log(playlistData)
   
         if (!playlistData || !playlistData.items) {
-          console.error("No playlist data available");
           return null;
         }
   
@@ -134,7 +122,6 @@ useEffect(() => {
 
         return {total: total, tracks: allTracks}
     } catch (error) {
-      console.error("Error fetching playlist tracks:", error);
       return null;
     }
   }
