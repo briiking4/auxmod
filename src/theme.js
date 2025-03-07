@@ -31,6 +31,18 @@ const theme = createTheme({
       desktop: 1200,
     },
   },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          background: 'linear-gradient(180deg, #87CEEB, #FFD8A8)',
+          backgroundAttachment: 'fixed',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '100vh',
+        },
+      },
+    },
+  },
 });
 
 export default theme;
