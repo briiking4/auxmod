@@ -156,7 +156,12 @@ export default function Search({ sendItemSelected }) {
   };
 
   return (
-    <>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%',
+      overflow: 'hidden'
+    }}>
       {/* Filter Buttons */}
       <Filter sendSearchFilterStatus={handleFilterStatus} type="search" />
       
@@ -188,33 +193,28 @@ export default function Search({ sendItemSelected }) {
           }}
         />
       </Container>
-      <>
-
-      {
-        searchList && (
-            <Box sx={{ height: '425px', overflow: 'auto' }}>
+      {/* Search Results */}
+      <Box sx={{
+          flexGrow: 1,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {searchList && (
+            <Box sx={{ 
+              overflow: 'auto', // Make only this section scrollable
+              flexGrow: 1,
+              scrollbarColor: 'rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0)',
+            }}>
               <ListItems 
                 sendData={sendItemSelected} 
                 list={searchList} 
               />
             </Box>
-        )
-      }
-
-
-
-
-      {
-        !userPlaylists && selectedFilter === 'My Library' &&
-        
-        <Typography sx={{mt:3}}>
-          You do not have any playlists in your library. Please select "All" to search Spotify playlists.
-        </Typography>
-      }
-
-      </>
+          )}
+        </Box>
 
     
-    </>
+    </Box>
   );
 }

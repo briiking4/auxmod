@@ -170,11 +170,25 @@ useEffect(() => {
   }
 
   return (
-    <Paper sx={{ width: "100%", overflow: "hidden", borderRadius:'15px', backgroundColor:'#ebebeb' }}>
-      <TableContainer sx={{ minHeight: 320, overflow: "hidden"}}>
+    <Paper sx={{ 
+      width: "100%", 
+      height: "100%", // Use full height of container
+      display: "flex", 
+      flexDirection: "column",
+      overflow: "hidden", 
+      borderRadius: '15px', 
+      backgroundColor: '#ebebeb' 
+      }}>
+      <TableContainer sx={{ 
+        flex: 1, // Take up available space
+        overflow: "auto",
+        display: "flex",
+        flexDirection: "column"}}
+      >
         <Table aria-label="simple table"
         sx={{
           "& .MuiTableCell-root": {border: "none" },
+          tableLayout: "fixed"
         }}
         >
           <TableHead sx={{ position: "sticky", top: 0}}>
@@ -185,20 +199,23 @@ useEffect(() => {
           </TableHead>
         </Table>
 
-        <Box sx={{ maxHeight: 310, 
-        overflowY: "auto", 
-        overflowX: "hidden",
-        scrollbarColor: 'rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0)',
-      }}>
+        <Box sx={{
+          flexGrow: 1,
+          maxHeight: "100%", // Subtract header height
+          width: "100%",
+          scrollbarColor: 'rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0)',
+        }}>
           <Table
             sx={{
               "& .MuiTableCell-root": { padding: "10px", border: "none" },
+              tableLayout: "fixed"
             }}
           >
             <TableBody>
               {tracks.map((track) => (
                 <TableRow hover role="checkbox" tabIndex={-1} key={track.id}>
-                  <TableCell sx={{maxWidth:"126px"}}>
+                  {/* Tracks data */}
+                  <TableCell sx={{width:"70%"}}>
                     <Box sx={{overflow:'hidden', display:'flex', gap:0.8}}>
                       <img
                           width="50px"
@@ -213,6 +230,7 @@ useEffect(() => {
                           flexDirection: "column",
                           alignItems: "flex-start",
                           gap: 0.5,
+                          maxWidth: "calc(100% - 60px)", // Subtract the width of the image + gap
                         }}
                       >
                         <Typography
@@ -244,7 +262,7 @@ useEffect(() => {
 
                   {/* Show reason only if the view is "excluded" */}
                   {view === "excluded" && (
-                      <td>
+                      <>
                           {track.reason && (
                               <Box sx={{float:'right', m:2}}>
                                   {track.reason.includes('Profanity') && (
@@ -273,13 +291,16 @@ useEffect(() => {
                                       </Tooltip>
                                   )}
                                   {track.reason.includes('No score') && (
-                                      <Tooltip title="Error">
+                                      <Tooltip title="Error"
+                                      enterTouchDelay={0} 
+                                      leaveTouchDelay={3000}
+                                      >
                                           <DiscFullIcon/>
                                       </Tooltip>
                                   )}
                               </Box>
                           )}
-                      </td>
+                      </>
                   )}
 
                     

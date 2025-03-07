@@ -17,8 +17,8 @@ console.log(savedPlaylist);
   return (
     <Container sx={{ mt: 5 }}>
 
-        <Typography variant="h6">{originalPlaylistName} has been cleanified!</Typography>
-        <Typography variant="caption">Your cleaned playlist has been saved to your library.</Typography>
+        <Typography variant="h6">{originalPlaylistName} has been filtered!</Typography>
+        <Typography variant="caption">Your new cleaned playlist has been saved to your library.</Typography>
 
         <Container
            sx={{

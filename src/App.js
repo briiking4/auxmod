@@ -13,12 +13,11 @@ import { setAccessToken } from './spotifyApi';
 
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 
-// Deploy: host backend on render
 
-// login page - logo / name change
+// finish logo 
 // make a landing page?? or add stuff on the app login? 
 
-// ADD: gtag google analytics 
+// ADD: gtag google analytics before release
 
 export default function App() {
 
@@ -207,11 +206,10 @@ export default function App() {
         tablet: '100%',  // Tablet 
         laptop: '1024px', // Laptop 
         desktop: '1200px', // Desktop devices
-        maxHeight: '100lvh',  // Full dynamic viewport height when avalible
-        minHeight: '100svh', // Minimum height based on smallest viewport height (address bar visible)
-        display: 'flex',   // Flexbox layout to adjust content inside
-        flexDirection: 'column', // Arrange components vertically
       },
+      height: '100dvh',
+      display:'flex',
+      flexDirection:'column',
       }}>
 
       { !loggedIn?
@@ -231,10 +229,7 @@ export default function App() {
           <>
             {
               !stepsStatus[2] ? 
-                <Container sx={{mt:1, p:0}}>
                   <SaveComponent sendStatus={handleStepsStatus} cleanedPlaylist={cleanedPlaylist} chosenFilters={chosenFilters} userId={userId} sendSavedPlaylist={handleSavedPlaylist}/>
-                </Container>
-              
               :
               <>
                 <Done savedPlaylist={savedPlaylist} originalPlaylistName={chosenPlaylist.name}/>
@@ -271,7 +266,17 @@ export default function App() {
           <></>
         }
       </>
+      
     }
+    <Box 
+        sx={{
+          mt: 'auto', // Pushes the footer to the bottom
+          textAlign: 'center',
+          width: '100%',
+        }}
+      >
+     <p>© 2025 auXmod. Created by Briana King.</p>
+    </Box>
 
   </Container>
 

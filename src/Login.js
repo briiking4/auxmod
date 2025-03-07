@@ -35,7 +35,7 @@ export default function Login({sendLoginStatus, sendAccessToken}) {
 
 
       // state of access token is empty
-      const response = await fetch('http://localhost:3333/refresh_token', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/refresh_token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: refreshToken }),
@@ -65,14 +65,14 @@ export default function Login({sendLoginStatus, sendAccessToken}) {
   const scheduleTokenRefresh = (expiresAt, refreshToken) => {
     if (!expiresAt) return;
 
-    const timeout = expiresAt - Date.now() - 60000; // Refresh 1 minute before expiry
+    const timeout = expiresAt - Date.now() - 60000; 
 
     if (timeout <= 0) {
       console.log('Token already expired or near expiration, refreshing immediately...');
-      refreshAccessToken(refreshToken);  // Trigger immediate refresh if the token is close to expiration
+      refreshAccessToken(refreshToken);
     } else {
       console.log('Scheduling refresh...');
-      setTimeout(() => refreshAccessToken(refreshToken), timeout);  // Wrap the call inside a function
+      setTimeout(() => refreshAccessToken(refreshToken), timeout); 
     }
   };
 
@@ -140,7 +140,7 @@ export default function Login({sendLoginStatus, sendAccessToken}) {
         fontWeight="bold"
         gutterBottom
       >
-        Cleanify
+        auXmod
       </Typography>
     </Box>
     <Container

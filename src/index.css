@@ -1,4 +1,6 @@
 body {
     background: linear-gradient(180deg, #87CEEB, #FFD8A8);
 }
-  
+#root{
+    display:flex
+}

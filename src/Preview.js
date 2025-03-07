@@ -33,13 +33,22 @@ export default function Preview({sendStatus, item}) {
     
 
   return (
-         <Container sx={{p: 0 }}>
+    <Box sx={{ 
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      overflow: 'hidden',
+    }}>
           {
             item != null &&
-            <Box> 
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              height: '100%',
+            }}> 
 
-              <Box sx={{mb:2}}>
-
+              {/* Header section */}
+              <Box sx={{mb:2, flexShrink: 0}}>
                 <Typography variant="h6">
                     {item.name}
                 </Typography>
@@ -57,56 +66,56 @@ export default function Preview({sendStatus, item}) {
                 </Box>
               </Box>
 
-                  <PreviewPlaylist id={item.id} tracksList={null} view="preview"/>
-                  <Container
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent:'center',
-                    textAlign: 'center',
-                    mt: 2,
-                    '& .MuiButtonBase-root': {
-                      borderRadius: '50px',
-                    },
-                    width: '80%'
-                  }}
-                  >
-                    <Button 
-                    variant="contained" 
-                    sx={{ minWidth: '102px' }}
-                    onClick={() =>{
-                          handleConfirm()
-                    }}
-                    disabled={!tracksAvalible || playlistLimitHit}
-                    
-                    >
-                      Confirm    
-                    </Button> 
+              {/* Playlist takes available space and can scroll */}
+              <Box sx={{ 
+                flex: 1, 
+                minHeight: 0, 
+                overflow: 'hidden',
+                mb: 2,
+              }}>
+                <PreviewPlaylist id={item.id} tracksList={null} view="preview" />
+              </Box>
 
-                {
-                  playlistLimitHit && 
+              {/* Button container pinned to bottom */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  mt: 'auto',
+                  mb: 1,
+                }}
+              >
+                <Button 
+                  variant="contained" 
+                  sx={{ 
+                    minWidth: '102px',
+                    borderRadius: '50px',
+                  }}
+                  onClick={() => {
+                    handleConfirm()
+                  }}
+                  disabled={!tracksAvalible || playlistLimitHit}
+                >
+                  Confirm    
+                </Button> 
+              </Box>
+
+              {/* Messages section */}
+              <Box sx={{ flexShrink: 0, textAlign: 'center' }}>
+                {playlistLimitHit && 
                   <Typography variant="subtitle2">
                     Playlist is too large. Please select a playlist with 200 tracks or less.
                   </Typography>
                 }
-                {
-                  !tracksAvalible &&
+                {!tracksAvalible &&
                   <Typography variant="subtitle2">
                     This playlist is empty or contains unavalible tracks.
                   </Typography>
                 }
-                  </Container>   
+              </Box>
             </Box>
           }
-
-       </Container>
+    </Box>
   );
 }
-
-       
-       
-       
-       
-       
-  
