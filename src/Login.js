@@ -14,6 +14,7 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
   
   // Add state to control when content is visible
   const [contentLoaded, setContentLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const getHashParams = () => {
     const hashParams = {};
@@ -32,7 +33,6 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
       console.log('Refreshing access token...');
       console.log('refresh token is', refreshToken);
 
-      // state of access token is empty
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/refresh_token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,7 +52,7 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
           expiresAt,
         }));
 
-        scheduleTokenRefresh(expiresAt, refreshToken); // Set next refresh based on new expiry time
+        scheduleTokenRefresh(expiresAt, refreshToken);
       }
     } catch (error) {
       console.error('Error refreshing access token:', error);
@@ -74,6 +74,15 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
     }
   };
 
+  // Preload the image
+  useEffect(() => {
+    const img = new Image();
+    img.src = logo;
+    img.onload = () => {
+      setImageLoaded(true);
+    };
+  }, []);
+
   // Handle login and token processing
   useEffect(() => {
     const params = getHashParams();
@@ -94,12 +103,17 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
       }));
 
       console.log("Expires at", calculatedExpiresAt);
-      scheduleTokenRefresh(calculatedExpiresAt, refreshToken); // Use the calculated expiry time
+      scheduleTokenRefresh(calculatedExpiresAt, refreshToken);
     }
-    
-    // Set content as loaded after a small delay to ensure CSS has loaded
-    setTimeout(() => setContentLoaded(true), 100);
   }, []);
+  
+  // Set content as loaded only after image is loaded
+  useEffect(() => {
+    if (imageLoaded) {
+      // Increased delay to ensure everything is ready
+      setTimeout(() => setContentLoaded(true), 300);
+    }
+  }, [imageLoaded]);
 
   // Update access token in parent component when it changes
   useEffect(() => {
@@ -137,22 +151,29 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
         textAlign: 'center',
         minHeight: '90vh',
         objectFit: 'contain',
+        // Add a background color that matches your app's theme
+        // This helps prevent the white flash
+        bgcolor: 'background.default'
       }}
     >
-      {/* Only render content when contentLoaded is true */}
       {contentLoaded && (
         <>
           <Box sx={{
-            animation: `${fadeIn} 1s ease-out`,
-            opacity: 0,  // Start with opacity 0
-            animationFillMode: 'forwards'  // Keep the end state of the animation
+            animation: `${fadeIn} 1.2s ease-out`,
+            opacity: 0,
+            animationFillMode: 'forwards',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
           }}>
             <img
               src={logo}
               alt="logo"
               style={{ 
-                width: '50%', 
+                width: '40%', 
                 marginBottom: '1rem',
+                display: 'block'
               }}
             />
             <Typography
@@ -174,9 +195,9 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
                 borderRadius: '50px',
               },
               p: 0,
-              opacity: 0,  // Start with opacity 0
-              animation: `${fadeIn} 1s ease-out 0.3s`,  // Delay button animation
-              animationFillMode: 'forwards'  // Keep the end state of the animation
+              opacity: 0,
+              animation: `${fadeIn} 1.2s ease-out 0.5s`,  // Increased delay for button
+              animationFillMode: 'forwards'
             }}
           >
             <Button 
