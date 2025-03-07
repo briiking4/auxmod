@@ -30,11 +30,11 @@ const theme = createTheme({
       laptop: 1024,
       desktop: 1200,
     },
-  },
+  },  
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        body: {
+        html, body: {
           background: 'linear-gradient(180deg, #87CEEB, #FFD8A8)',
           backgroundAttachment: 'fixed',
           backgroundRepeat: 'no-repeat',
