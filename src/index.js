@@ -1,3 +1,10 @@
+// replace console.* for disable log on production
+if (process.env.NODE_ENV === 'production') {
+  console.log = () => {}
+  console.error = () => {}
+  console.debug = () => {}
+}
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import CssBaseline from '@mui/material/CssBaseline';
