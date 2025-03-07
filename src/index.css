@@ -1,4 +1,4 @@
 body {
     background: linear-gradient(180deg, #87CEEB, #FFD8A8);
-    background-size: cover;
+    transition: background 0.3s ease-in-out;
 }
