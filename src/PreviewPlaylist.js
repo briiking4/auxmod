@@ -253,7 +253,7 @@ useEffect(() => {
 
                   {/* Show reason only if the view is "excluded" */}
                   {view === "excluded" && (
-                      <>
+                      <td>
                           {track.reason && (
                               <Box sx={{float:'right', m:2}}>
                                   {track.reason.includes('Profanity') && (
@@ -291,7 +291,7 @@ useEffect(() => {
                                   )}
                               </Box>
                           )}
-                      </>
+                      </td>
                   )}
 
                     

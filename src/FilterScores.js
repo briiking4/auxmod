@@ -1,5 +1,8 @@
-import {Filter} from 'bad-words';
-import OpenAI from "openai";
+import {
+	RegExpMatcher,
+	englishDataset,
+	englishRecommendedTransformers,
+} from 'obscenity';
 
 
 const FilterScores = async (songTitle, songArtist) => {
@@ -42,25 +45,23 @@ const FilterScores = async (songTitle, songArtist) => {
       }
     }
 
+  
+  const matcher = new RegExpMatcher({
+    ...englishDataset.build(),
+    ...englishRecommendedTransformers,
+  });
+
   const checkProfanity = async (lyrics) => {
 
     if(lyrics){
-      const filter = new Filter();
-      filter.removeWords('damn', 'hell', 'ass', 'fart', 'God-damned', 'retard', 'screwing', 'sex', 'sexy', 'slut', 'vagina', 'queef', 'God')
 
-
-      // if(whitelist){
-      //   filter.removeWords(whitelist)
-      // }
-
-      if (filter.isProfane(lyrics)) {
+      if (matcher.hasMatch(lyrics)) {
         console.log("Profanity detected!");
         return true;
       } else {
         console.log("No profanity found.");
         return false;
       }
-
     }else{
       return false;
     }

@@ -19,6 +19,7 @@ let prod = true;
 var client_id = process.env.SPOTIFY_CLIENT_ID;
 var client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 const redirect_uri = prod ? process.env.REDIRECT_URI : 'http://localhost:3333/api/callback';
+const corsOrigin = prod ? 'https://auxmod.netlify.app/' : '*' 
 
 
 
@@ -27,7 +28,7 @@ var stateKey = 'spotify_auth_state';
 var app = express();
 
 app.use(cors({
-  origin: 'https://auxmod.netlify.app/',  // Allow all origins (* for testing purposes, https://auxmod.netlify.app/ for prod)
+  origin: corsOrigin,  
   methods: ['GET', 'POST'],
 }));
 
