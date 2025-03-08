@@ -271,11 +271,11 @@ export default function App() {
     <Box 
         sx={{
           mt: 'auto', // Pushes the footer to the bottom
-          textAlign: 'center',
+          textAlign: 'left',
           width: '100%',
         }}
       >
-     <p>© 2025 auXmod. Created by Briana King.</p>
+     <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
     </Box>
 
   </Container>
