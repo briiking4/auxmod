@@ -19,8 +19,6 @@ import FirstPageIcon from '@mui/icons-material/FirstPage';
 // finish logo 
 // make a landing page?? or add stuff on the app login? 
 
-// ADD: gtag google analytics before release
-
 export default function App() {
 
   // Logged in Status
