@@ -143,7 +143,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                       : 'No tracks passed the filter(s)'
                   : displayedTracks.length > 0
                     ? chosenFilters.includes('Profanity')
-                      ? 'Failed filter(s)'
+                      ? 'Failed filter(s) or lacks a valid clean version replacement'
                       : 'Failed filter(s)'
                     : chosenFilters.includes('Profanity')
                       ? 'All tracks either passed filter(s) or a clean version replacement was found!'
