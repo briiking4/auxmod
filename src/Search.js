@@ -6,6 +6,8 @@ import Filter from './Filter';
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import spotifyApi from './spotifyApi';
+import ReactGA from 'react-ga4';
+
 
 export default function Search({ sendItemSelected }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,6 +24,10 @@ export default function Search({ sendItemSelected }) {
 
   const debounceTimeout = useRef(null);
   const ITEMS_PER_FETCH = 20;
+
+  useEffect(() => {
+    ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Search Playlists" });
+}, []);
 
   // Get User Playlists with pagination
   async function getUserPlaylists(offset = 0, limit = ITEMS_PER_FETCH) {

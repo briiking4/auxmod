@@ -1,12 +1,18 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Search from './Search';
 import Preview from './Preview';
+import ReactGA from 'react-ga4';
+
 
 export default function ChoosePlaylist({sendStatus, sendChosenPlaylist}) {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+
+  useEffect(() => {
+    ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Choose Playlist" });
+}, []);
 
   const handleSearchSelect = (item) =>{
     setSelectedPlaylist({id: item.id, name: item.name, owner: item.owner.display_name, total: item.tracks.total})

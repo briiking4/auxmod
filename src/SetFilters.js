@@ -4,6 +4,7 @@ import {Container, Typography, Button, IconButton, Box, LinearProgress, Alert, T
 import Filter from './Filter';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import InfoIcon from '@mui/icons-material/Info';
+import ReactGA from 'react-ga4';
 
 // Create a simple event emitter outside component to avoid re-renders
 const filterState = {
@@ -18,10 +19,13 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
 
   const [loadingProgress, setProgress] = useState(0);
 
-  // useEffect(() => {
-  //   setProgress(progress)
-  // }, [progress])
-  
+  // Google Analytics tracking:
+
+  useEffect(() => {
+      ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Set Filters" });
+  }, []);
+
+
   // Function passed to Filter component that doesn't trigger re-renders in SetFilters
   const handleFilterUpdate = (filters) => {
     // Store filters without causing a re-render
@@ -38,6 +42,11 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
   };
 
   const handleApplyFilters = async () => {
+    ReactGA.event({
+      category: 'User',
+      action: `Apply Filters Clicked`
+    });
+
     setLoading(true);
     
     // Get the currently selected filter labels

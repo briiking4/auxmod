@@ -8,6 +8,8 @@ import ProfanityIcon from './ProfanityIcon';
 import ViolenceIcon from './ViolenceIcon';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import DiscFullIcon from '@mui/icons-material/DiscFull';
+import ReactGA from 'react-ga4';
+
 
 
 
@@ -15,9 +17,12 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
   const [view, setView] = useState('included');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    console.log("Save Compt has mounted and the cleanedplaylist is", cleanedPlaylist);
+   // Google Analytics tracking:
+
+   useEffect(() => {
+      ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Review & Save Playlist" });
   }, []);
+
 
   const displayedTracks =
     view === 'included'
@@ -50,6 +55,10 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
   }
   
   const handleSave = async () => {
+    ReactGA.event({
+      category: 'User',
+      action: `Save to Library Clicked`
+    });
     setLoading(true);
     await CreateCleanedPlaylist(cleanedPlaylist);
     sendStepStatus(true);

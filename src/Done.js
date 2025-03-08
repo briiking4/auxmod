@@ -1,5 +1,7 @@
 import * as React from 'react';
 import {Container, Typography, Button} from '@mui/material';
+import ReactGA from 'react-ga4';
+
 
 
 
@@ -38,7 +40,11 @@ console.log(savedPlaylist);
            sx={{ minWidth: '102px', minHeight:'42px', backgroundColor: 'secondary.main' }}
            onClick={() =>{
             console.log("Opening playlist in Spotify");
-            window.open('https://open.spotify.com/playlist/' + savedPlaylist)
+            window.open('https://open.spotify.com/playlist/' + savedPlaylist);
+            ReactGA.event({
+              category: 'User',
+              action: `Open in Spotify Clicked`
+            });
            }}
            
            >

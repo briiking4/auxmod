@@ -32,6 +32,7 @@
     "querystring": "^0.2.1",
     "react": "latest",
     "react-dom": "latest",
+    "react-ga4": "^2.1.0",
     "react-scripts": "latest",
     "serverless-http": "^3.2.0",
     "spotify-web-api-js": "^1.5.2"

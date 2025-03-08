@@ -9,7 +9,9 @@ import SaveComponent from './SaveComponent';
 import Done from './Done';
 import Login from './Login';
 import CleanPlaylist from './CleanPlaylist';
-import { setAccessToken } from './spotifyApi'; 
+import { setAccessToken } from './spotifyApi';
+import ReactGA from 'react-ga4';
+
 
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 
@@ -59,6 +61,19 @@ export default function App() {
 
   // Setting the status of the steps
   const [stepsStatus, setStepsStatus] = useState([false, false, false])
+
+  //Google Analytics tracking:
+
+  useEffect(() => {
+    
+    ReactGA.initialize('G-VKQ70YNR1N', { testMode: process.env.NODE_ENV !== 'production' });
+    if(loggedIn){
+      ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Main App - User logged in" });
+      ReactGA.set({
+        userId: userId, 
+      });
+    }
+  }, []);
 
 
   // Recieving logged in status from the Login Compt
@@ -251,7 +266,11 @@ export default function App() {
                 onClick={() => {
                   console.log("Clean again");
                   setActiveStep(0);
-                  setStepsStatus([false, false, false])
+                  setStepsStatus([false, false, false]);
+                  ReactGA.event({
+                    category: 'User',
+                    action: `Clean another playlist Clicked`
+                  });
                 }}
                 >
                   <FirstPageIcon/>

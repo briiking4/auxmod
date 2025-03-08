@@ -2,6 +2,8 @@ import pLimit from 'p-limit';
 import { backOff } from 'exponential-backoff';
 import spotifyApi from './spotifyApi';
 import FilterScores from './FilterScores.js';
+import ReactGA from 'react-ga4';
+
 
 // rate-limited API wrapper
 const rateLimitedApi = {
@@ -105,7 +107,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         next = pagedResponse.next;
      }
 
-      console.log(`Fetched ${allTracks.length} valid tracks from playlist`);
       onProgressUpdate(10); // Finished this function, 10% progress complete 
       
       return allTracks;
@@ -288,6 +289,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   // Main function to prepare the clean playlist
   const prepareCleanPlaylist = async (id) => {
     try {
+      const startTime = Date.now();
       // 1. Fetch tracks (0-10% progress)
       console.log("Fetching playlist tracks");
       const playlistTracks = await getPlaylistTracks(id);
@@ -316,6 +318,27 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       ];
       
       onProgressUpdate(100);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      console.log("Cleaning time: ", duration)
+
+      // Google Analytics tracking
+      ReactGA.event({
+        category: "Playlist",
+        action: "Playlist Clean Duration",
+        label: playlistId,
+        value: duration,
+        nonInteraction: true,
+      });
+      // track count 
+      ReactGA.event({
+        category: "Playlist",
+        action: "Length of Playlist Cleaned",
+        label: playlistId,
+        value: totalTrackCount,
+        nonInteraction: true,
+      });
+      
       
       return {
         name: `${playlistName} (auXmod Version)`,

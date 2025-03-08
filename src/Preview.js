@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import {Container, Button, Typography, Box} from '@mui/material';
 import PreviewPlaylist from './PreviewPlaylist';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import ReactGA from 'react-ga4';
+
 
 
 export default function Preview({sendStatus, item}) {
@@ -25,9 +27,20 @@ export default function Preview({sendStatus, item}) {
       }
     }, [item])
 
+      // Google Analytics tracking:
+
+  useEffect(() => {
+      ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Preview Playlist" });
+  }, []);
+
+
 
     //sending step status to Choose Playlist
     const handleConfirm = () =>{
+      ReactGA.event({
+        category: 'User',
+        action: `Confirm Playlist Clicked`
+      });
         sendStatus([0,true]);
     }   
     
