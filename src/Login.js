@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { Container, Typography, Button, Box, keyframes } from '@mui/material';
-import logo from './logo.png';
+// import logo from './logo.png';
+import logo from './auxmod_logo.svg';
 import spotifyApi from './spotifyApi';
 
 export default function Login({ sendLoginStatus, sendAccessToken }) {
@@ -186,7 +187,7 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
                 src={logo}
                 alt="logo"
                 style={{ 
-                  width: '50%', 
+                  width: '100%', 
                   marginBottom: '1rem',
                   display: 'block',
                   margin: '0 auto'
