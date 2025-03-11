@@ -222,6 +222,7 @@ export default function App() {
       height: '100dvh',
       display:'flex',
       flexDirection:'column',
+      backgroundColor:'transparent'
       }}>
 
       { !loggedIn?

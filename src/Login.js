@@ -164,7 +164,6 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
         textAlign: 'center',
         minHeight: '90vh',
         objectFit: 'contain',
-        bgcolor: 'background.default'
       }}
     >
       {contentLoaded && (
