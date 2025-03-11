@@ -15,8 +15,7 @@ import ReactGA from 'react-ga4';
 
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 
-
-// finish logo 
+// LEFT OFF: handle undo
 // make a landing page?? or add stuff on the app login? 
 
 export default function App() {

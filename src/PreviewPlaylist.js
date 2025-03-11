@@ -21,13 +21,16 @@ import spotifyApi from './spotifyApi';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import ExplicitIcon from '@mui/icons-material/Explicit';
 import DiscFullIcon from '@mui/icons-material/DiscFull';
+import AddIcon from '@mui/icons-material/Add';
+import CheckIcon from '@mui/icons-material/Check';
+
 import ProfanityIcon from './ProfanityIcon';
 import ViolenceIcon from './ViolenceIcon';
 
 
 
 
-export default function PreviewPlaylist({ id, tracksList, view }) {
+export default function PreviewPlaylist({ id, tracksList, view, handleAddAnyway }) {
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [playingTrackId, setPlayingTrackId] = useState(null);
@@ -67,14 +70,11 @@ useEffect(() => {
     };
 
      setTrackList();
-      if (scrollRef.current) {
-        scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      }
   }, [id, tracksList]);
 
   useEffect(() =>{
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollRef.current.scrollTo({ top: 0, behavior: 'auto' });
     }
   }, [view])
 
@@ -142,6 +142,8 @@ useEffect(() => {
     }
   };
 
+
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
@@ -167,29 +169,35 @@ useEffect(() => {
       overflow: "hidden", 
       borderRadius: '15px', 
       backgroundColor: '#ebebeb' 
-      }}>
+    }}>
       <TableContainer 
-      ref={scrollRef}
-      sx={{ 
-        flex: 1, // Take up available space
-        overflow: "auto",
-        display: "flex",
-        flexDirection: "column"}}
+        ref={scrollRef}
+        sx={{ 
+          flex: 1, // Take up available space
+          overflow: "auto",
+          display: "flex",
+          flexDirection: "column"
+        }}
       >
         <Table aria-label="simple table"
-        sx={{
-          "& .MuiTableCell-root": {border: "none" },
-          tableLayout: "fixed"
-        }}
+          sx={{
+            "& .MuiTableCell-root": {border: "none" },
+            tableLayout: "fixed"
+          }}
         >
-          <TableHead sx={{ position: "sticky", top: 0}}>
+          <TableHead sx={{ position: "sticky", top: 0, backgroundColor: '#ebebeb'}}>
             <TableRow>
-              <TableCell sx={{width:"265px", p:'10px'}}>Title</TableCell>
-              {view === "excluded" && <TableCell sx={{textAlign: "left", float:'right', p:'10px'}}>Reason</TableCell>}
+              <TableCell sx={{width:"70%", p:'10px'}}>Title</TableCell>
+              {view === "excluded" && (
+                <>
+                  <TableCell sx={{textAlign: "right", p:'10px'}}>Reason</TableCell>
+                  <TableCell sx={{textAlign: "right", p:'10px'}}>Include</TableCell>
+                </>
+              )}
             </TableRow>
           </TableHead>
         </Table>
-
+    
         <Box sx={{
           flexGrow: 1,
           maxHeight: "100%", // Subtract header height
@@ -209,12 +217,12 @@ useEffect(() => {
                   <TableCell sx={{width:"70%"}}>
                     <Box sx={{overflow:'hidden', display:'flex', gap:0.8}}>
                       <img
-                          width="50px"
-                          height="50px"
-                          src={track.album.images[2].url || track.album.images[1].url || track.album.images[0].url}
-                          alt={track.name}
-                          style={{borderRadius: "2px"}}
-                        />
+                        width="50px"
+                        height="50px"
+                        src={track.album.images[2].url || track.album.images[1].url || track.album.images[0].url}
+                        alt={track.name}
+                        style={{borderRadius: "2px"}}
+                      />
                       <Box
                         sx={{
                           display: "flex",
@@ -248,54 +256,66 @@ useEffect(() => {
                         </Box>
                       </Box>
                     </Box>
-                    
                   </TableCell>
-
+    
                   {/* Show reason only if the view is "excluded" */}
                   {view === "excluded" && (
-                      <td>
-                          {track.reason && (
-                              <Box sx={{float:'right', m:2}}>
-                                  {track.reason.includes('Profanity') && (
-                                      <Tooltip title="Profanity"
-                                      enterTouchDelay={0} 
-                                      leaveTouchDelay={3000}
-                                      >
-                                         <span><ProfanityIcon/></span>
-                                      </Tooltip>
-                                  )}
-                                  {track.reason.includes('Violence') && (
-                                      <Tooltip title="Violence"
-                                      enterTouchDelay={0} 
-                                      leaveTouchDelay={3000}
-                                      >
-                                          <span><ViolenceIcon/></span>
-                                      </Tooltip>
-                                  )}
-                                  {track.reason.includes('Sexual') && (
-                                      <Tooltip 
-                                      title="Sexual Content"
-                                      enterTouchDelay={0} 
-                                      leaveTouchDelay={3000}
-                                      >
-                                          <LocalFireDepartmentIcon/>
-                                      </Tooltip>
-                                  )}
-                                  {track.reason.includes('No score') && (
-                                      <Tooltip title="Unable to verify"
-                                      enterTouchDelay={0} 
-                                      leaveTouchDelay={3000}
-                                      >
-                                          <DiscFullIcon/>
-                                      </Tooltip>
-                                  )}
-                              </Box>
+                    <>
+                      <TableCell align="right">
+                        <Box sx={{
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          alignItems: 'center',
+                          height: '100%'
+                        }}>
+                          {track.reason && track.reason.includes('Profanity') && (
+                            <Tooltip title="Profanity"
+                              enterTouchDelay={0} 
+                              leaveTouchDelay={3000}
+                            >
+                              <span style={{marginLeft: '4px'}}><ProfanityIcon/></span>
+                            </Tooltip>
                           )}
-                      </td>
+                          {track.reason && track.reason.includes('Violence') && (
+                            <Tooltip title="Violence"
+                              enterTouchDelay={0} 
+                              leaveTouchDelay={3000}
+                            >
+                              <span style={{marginLeft: '4px'}}><ViolenceIcon/></span>
+                            </Tooltip>
+                          )}
+                          {track.reason && track.reason.includes('Sexual') && (
+                            <Tooltip 
+                              title="Sexual Content"
+                              enterTouchDelay={0} 
+                              leaveTouchDelay={3000}
+                            >
+                              <span style={{marginLeft: '4px'}}><LocalFireDepartmentIcon/></span>
+                            </Tooltip>
+                          )}
+                          {track.reason && track.reason.includes('No score') && (
+                            <Tooltip title="Unable to verify"
+                              enterTouchDelay={0} 
+                              leaveTouchDelay={3000}
+                            >
+                              <span style={{marginLeft: '4px'}}><DiscFullIcon/></span>
+                            </Tooltip>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton 
+                          aria-label="add-anyway" 
+                          size="small"
+                          onClick={() => handleAddAnyway(track)}
+                        >
+                          <AddIcon />
+                        </IconButton>
+                      </TableCell>
+                    </>
                   )}
-
                     
-                  { (view === 'included' || view === 'preview') && 
+                  {(view === 'included' || view === 'preview') && 
                     <TableCell size="small" sx={{textAlign:'right'}}>
                       <IconButton
                         onClick={() => handlePlayPause(track)}

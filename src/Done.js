@@ -26,7 +26,7 @@ console.log(savedPlaylist);
            sx={{
              display: 'flex',
              flexDirection: 'row',
-             justifyContent: 'start',
+             justifyContent: 'center',
              my: 4,
              '& .MuiButtonBase-root': {
                borderRadius: '50px',

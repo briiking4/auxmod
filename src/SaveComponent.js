@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { Button, Box, Typography, IconButton } from '@mui/material';
+import { Button, Box, Typography, IconButton, Snackbar} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PreviewPlaylist from './PreviewPlaylist';
 import spotifyApi from './spotifyApi';
@@ -8,26 +8,31 @@ import ProfanityIcon from './ProfanityIcon';
 import ViolenceIcon from './ViolenceIcon';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import DiscFullIcon from '@mui/icons-material/DiscFull';
+import CloseIcon from '@mui/icons-material/Close';
+
 import ReactGA from 'react-ga4';
-
-
 
 
 export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilters, userId, sendSavedPlaylist }) {
   const [view, setView] = useState('included');
   const [loading, setLoading] = useState(false);
+  const [localCleanedPlaylist, setLocalCleanedPlaylist] = useState(cleanedPlaylist)
+  const [open, setOpen] = React.useState(false);
+  const [includeTrack, setIncludeTrack] = useState(null)
+  const [originalIndex, setOriginalIndex] = useState(null);
+
 
    // Google Analytics tracking:
 
    useEffect(() => {
       ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Review & Save Playlist" });
+      setLocalCleanedPlaylist(cleanedPlaylist);
   }, []);
-
 
   const displayedTracks =
     view === 'included'
-      ? cleanedPlaylist?.tracksAdded || []
-      : cleanedPlaylist?.excludedTracks || [];
+      ? localCleanedPlaylist?.tracksAdded || []
+      : localCleanedPlaylist?.excludedTracks || [];
 
   const sendStepStatus = (state) => {
     console.log("Step 3 complete: Sending status:", state);
@@ -60,9 +65,88 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
       action: `Save to Library Clicked`
     });
     setLoading(true);
-    await CreateCleanedPlaylist(cleanedPlaylist);
+    await CreateCleanedPlaylist(localCleanedPlaylist);
     sendStepStatus(true);
   };
+
+  const handleIncludeAnyway = (track) => {
+    console.log("included anyway", track);
+    
+    // find the index of the track in excludedTracks array before removing it
+    const excludedIndex = localCleanedPlaylist.excludedTracks.findIndex(
+      (excludedTrack) => excludedTrack.id === track.id
+    );
+    
+    // store the track and its original index
+    setIncludeTrack(track);
+    setOriginalIndex(excludedIndex);
+    setOpen(true);
+    
+    ReactGA.event({
+      category: 'User',
+      action: 'Include Excluded Track'
+    });
+
+    // deep copy of the current playlist state
+    const updatedPlaylist = JSON.parse(JSON.stringify(localCleanedPlaylist));
+    
+    // Add the track to tracksAdded array
+    updatedPlaylist.tracksAdded.push(track);
+    
+    // Remove the track from excludedTracks array
+    updatedPlaylist.excludedTracks = updatedPlaylist.excludedTracks.filter(
+      (excludedTrack) => excludedTrack.id !== track.id
+    );
+    console.log("the updated playlist is: ", updatedPlaylist)
+    setLocalCleanedPlaylist(updatedPlaylist);
+  };
+
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setOpen(false);
+  };
+
+  const handleUndo = () => {
+    // deep copy of the current playlist state
+    const updatedPlaylist = JSON.parse(JSON.stringify(localCleanedPlaylist));
+
+    // remove the track from tracksAdded array
+    updatedPlaylist.tracksAdded = updatedPlaylist.tracksAdded.filter(
+      (includedTrack) => includedTrack.id !== includeTrack.id
+    );
+    
+    // add the track back to excludedTracks array at its original index
+    if (originalIndex !== null && originalIndex >= 0) {
+      updatedPlaylist.excludedTracks.splice(originalIndex, 0, includeTrack);
+    } else {
+      // fallback in case the index isn't available
+      updatedPlaylist.excludedTracks.push(includeTrack);
+    }
+     
+    console.log("the updated playlist is: ", updatedPlaylist);
+    setLocalCleanedPlaylist(updatedPlaylist);
+    setOpen(false);
+  }
+
+  const undo = (
+    <>
+      <Button color="primary" size="small" onClick={handleUndo}>
+        UNDO
+      </Button>
+      <IconButton
+        size="small"
+        aria-label="close"
+        color="inherit"
+        onClick={handleClose}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </>
+  );
+
 
   return (
     <Box sx={{ 
@@ -86,7 +170,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
         <Typography variant="h6">{cleanedPlaylist?.name}</Typography>
       </Box>
 
-      {cleanedPlaylist ? (
+      {localCleanedPlaylist ? (
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -193,8 +277,21 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
             <PreviewPlaylist
               view={view}
               tracksList={JSON.parse(JSON.stringify(displayedTracks))}
+              handleAddAnyway={handleIncludeAnyway}
+
             />
           </Box>
+
+          {/* Snackbar - Song Included */}
+           <Snackbar
+            open={open}
+            onClose={handleClose}
+            message="Track included in playlist"
+            action={undo}
+            sx={{ mx:'auto', maxWidth:'300px'}}
+          />
+          
+
 
           {/* Save Button - Fixed at bottom */}
           {view === 'included' && (

@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import {Container, Typography, Button, IconButton, Box, LinearProgress, Alert, Tooltip} from '@mui/material';
+import {Container, Typography, Button, IconButton, Box, LinearProgress, Alert, Tooltip, CircularProgress} from '@mui/material';
 import Filter from './Filter';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import InfoIcon from '@mui/icons-material/Info';
 import ReactGA from 'react-ga4';
+import FilterListIcon from '@mui/icons-material/FilterList';
 
 // Create a simple event emitter outside component to avoid re-renders
 const filterState = {
@@ -93,29 +94,53 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
       <Filter sendModerationFiltersStatus={handleFilterUpdate} type="moderation" loading={loading}/>
 
 
-        <Box sx={{ position: 'relative', mt:5, maxWidth:'150px'}}>
-          <Button 
-            variant="contained" 
-            sx={{ 
-              position: 'relative',
-              overflow: 'hidden',
-              borderRadius: '50px',
-              width:'100%',
-            }}
-            disabled={buttonDisabled}
-            onClick={!loading ? handleApplyFilters : undefined}
-          >
-            <Box sx={{ 
-              position: 'relative', 
-              zIndex: 2, 
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              {loading ? `${Math.round(progress)}%` : 'Apply Filters'}
-            </Box>
-            
-            {loading && (
+      <Box sx={{ position: 'relative', mt: 5, maxWidth: '180px' }}>
+        <Button 
+          variant="contained" 
+          sx={{ 
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: '50px',
+            width: '100%',
+            height: '48px', // Consistent height
+            transition: 'all 0.3s ease',
+            boxShadow: loading ? '0 0 10px rgba(25, 118, 210, 0.5)' : 'none',
+          }}
+          disabled={buttonDisabled}
+          onClick={!loading ? handleApplyFilters : undefined}
+        >
+          <Box sx={{ 
+            position: 'relative', 
+            zIndex: 2, 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            fontWeight: loading ? 'bold' : 'normal',
+          }}>
+            {loading ? (
+              <>
+                <CircularProgress 
+                  size={20} 
+                  thickness={5}
+                  sx={{ 
+                    color: 'white', 
+                    marginRight: '8px',
+                    animation: 'pulse 1.5s infinite ease-in-out'
+                  }} 
+                />
+                {`${Math.round(progress)}%`}
+              </>
+            ) : (
+              <>
+                <FilterListIcon sx={{ marginRight: '8px' }} />
+                Apply Filters
+              </>
+            )}
+          </Box>
+          
+          {loading && (
+            <>
               <LinearProgress 
                 variant="determinate" 
                 value={progress} 
@@ -130,11 +155,20 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
                   zIndex: 1,
                   '& .MuiLinearProgress-bar': {
                     backgroundColor: 'primary.main',
+                    transition: 'transform 0.4s ease',
                   }
                 }}
               />
-            )}
-          </Button>
+            </>
+          )}
+        </Button>
+
+        <style jsx global>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+        `}</style>
       </Box>
     </Container>
   );

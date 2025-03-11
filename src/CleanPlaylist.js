@@ -35,7 +35,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   let playlistName = '';
   let totalTrackCount = 0;
   
-  // Enhanced cache with timestamps
+  // get cache 
   const getCleanTrackCache = () => {
     try {
       const cache = JSON.parse(localStorage.getItem('cleanTrackCache')) || {};
@@ -92,9 +92,34 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       allTracks = allTracks.concat(items.filter(isValidTrack));
       
       totalTrackCount = response.tracks.total;
-      onProgressUpdate(5); // Initial progress
       
-      // Fetch remaining tracks in batches with controlled concurrency
+      // Set initial progress
+      onProgressUpdate(2); // Start with 2% for getting initial playlist data
+      
+      // If we got all tracks in the first request, go straight to 10%
+      if (!next) {
+        onProgressUpdate(10);
+        return allTracks;
+      }
+      
+      // Calculate how many pages we'll need to fetch
+      const fetchedSoFar = allTracks.length;
+      const remainingTracks = totalTrackCount - fetchedSoFar;
+      const expectedPages = Math.ceil(remainingTracks / 100);
+      
+      // Calculate progress increment per page
+      const progressStart = 2;
+      const progressEnd = 10;
+      const progressPerPage = (progressEnd - progressStart) / (expectedPages + 1);
+      let currentProgress = progressStart;
+      
+      // Update progress after initial batch
+      currentProgress += progressPerPage;
+      onProgressUpdate(Math.round(currentProgress));
+      
+      let pagesFetched = 0;
+      
+      // Fetch remaining tracks in batches
       while (next) {
         const pagedResponse = await rateLimitedApi.call(
           spotifyApi.getPlaylistTracks.bind(spotifyApi), 
@@ -105,9 +130,14 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         const validTracks = pagedResponse.items.filter(isValidTrack);
         allTracks = allTracks.concat(validTracks);
         next = pagedResponse.next;
-     }
-
-      onProgressUpdate(10); // Finished this function, 10% progress complete 
+        
+        // Update progress after each page
+        pagesFetched++;
+        currentProgress = progressStart + ((pagesFetched + 1) * progressPerPage);
+        onProgressUpdate(Math.round(Math.min(currentProgress, progressEnd)));
+      }
+      
+      onProgressUpdate(progressEnd);
       
       return allTracks;
     } catch (error) {
@@ -116,8 +146,10 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     }
   };
 
-  // Score tracks and categorize
+  // Score tracks 
   const analyzeTracksData = async (tracks) => {
+    onProgressUpdate(11); // Start of analysis phase
+    
     const results = {
       explicitTracks: [],
       cleanTracks: [],
@@ -130,6 +162,14 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     for (let i = 0; i < tracks.length; i += batchSize) {
       batches.push(tracks.slice(i, i + batchSize));
     }
+
+    const totalBatches = batches.length;
+    let completedBatches = 0;
+    const progressStart = 15; 
+    const progressEnd = 50;   
+    
+    // Update at beginning of analysis phase
+    onProgressUpdate(progressStart);
         
     for (const batch of batches) {
       const limit = pLimit(20); 
@@ -139,7 +179,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           const item = trackItem.track;
           const cacheKey = `${item.name.toLowerCase()}-${item.artists[0].name.toLowerCase()}`;
           
-          // If there's a clean version in cache, use it directly
+          // If there's a clean version in cache, use it 
           if (cleanTrackCache[cacheKey] && cleanTrackCache[cacheKey].data) {
             return { type: 'clean', track: cleanTrackCache[cacheKey].data };
           }
@@ -182,7 +222,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           return { type: 'error', error };
         }
       }));
-      onProgressUpdate(25); // 25% progress before waiting the batch results
 
       
       const batchResults = await Promise.all(tasks);
@@ -198,31 +237,46 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         }
       }
       
+      completedBatches++;
+      const batchProgress = progressStart + 
+          ((progressEnd - progressStart) * (completedBatches / totalBatches));
+      onProgressUpdate(Math.round(batchProgress));
       
       // Small delay between batches to prevent rate limiting
       await new Promise(resolve => setTimeout(resolve, 100));
-      onProgressUpdate(50); // 50% progress after promises finish analyzing data 
     }
+    
+    onProgressUpdate(55); // Intermediate progress update before find clean versions step
     
     return results;
   };
   
   const findCleanVersions = async (tracks) => {
+    onProgressUpdate(60); // Start of find clean versions phase
+    
     console.log("tracks that need clean versions. in findclean: ", tracks);
     
     const foundCleanTracks = [];
-    let processedCount = 0;
-    const totalTracks = tracks.length;
-    
-    // Process tracks in batches
+
     const batchSize = 25; // Process 25 tracks at a time
     const batches = [];
     
     for (let i = 0; i < tracks.length; i += batchSize) {
       batches.push(tracks.slice(i, i + batchSize));
     }
-    onProgressUpdate(75); // progress update setting up batch for finding clean tracks is done
-
+    
+    const totalBatches = batches.length;
+    let completedBatches = 0;
+    const progressStart = 65; // starting at 65%
+    const progressEnd = 95;   
+    
+    onProgressUpdate(progressStart); 
+    
+    // If no tracks need clean versions, skip ahead
+    if (tracks.length === 0) {
+      onProgressUpdate(progressEnd);
+      return [];
+    }
     
     // Process each batch
     for (const batch of batches) {
@@ -256,7 +310,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
             const isTitleClean = itemName.includes("clean") || itemName.includes("radio");
             const isExactNameMatch = itemName === name;
         
-            // Stricter condition - both conditions must be explicitly evaluated
             return isClean && isSameArtist && (isExactNameMatch || isTitleClean);
           });
           
@@ -269,10 +322,13 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         } catch (error) {
           console.error('Error finding clean track:', error);
           return { found: false, error };
-        } finally {
-          onProgressUpdate(95); // progress update once clean tracks are found
         }
       }));
+      
+      completedBatches++;
+      const batchProgress = progressStart + 
+          ((progressEnd - progressStart) * (completedBatches / totalBatches));
+      onProgressUpdate(Math.round(batchProgress));
       
       const batchResults = await Promise.all(tasks);
       batchResults.forEach(result => {
@@ -290,15 +346,19 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   const prepareCleanPlaylist = async (id) => {
     try {
       const startTime = Date.now();
-      // 1. Fetch tracks (0-10% progress)
+      
+      // Initial progress update
+      onProgressUpdate(1);
+      
+      // 1. Fetch tracks (1-10% progress)
       console.log("Fetching playlist tracks");
       const playlistTracks = await getPlaylistTracks(id);
       
-      // 2. Analyze tracks (10-50% progress)
+      // 2. Analyze tracks (11-55% progress)
       console.log("Analyzing tracks data");
       const tracksData = await analyzeTracksData(playlistTracks);
       
-      // 3. Find clean versions (50-95% progress)
+      // 3. Find clean versions (60-95% progress)
       console.log("Finding clean versions for", tracksData.tracksNeedingCleanSearch.length, "tracks");
       const foundCleanTracks = tracksData.tracksNeedingCleanSearch.length > 0 
         ? await findCleanVersions(tracksData.tracksNeedingCleanSearch)
@@ -306,6 +366,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       
       // 4. Finalize results (95-100% progress)
       console.log("Finalizing playlist");
+      onProgressUpdate(96); // Start of finalization phase
+      
       const allCleanTracks = [...tracksData.cleanTracks, ...foundCleanTracks];
       
       // Determine which tracks were excluded (those that needed clean versions but none were found)
@@ -317,7 +379,11 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         )
       ];
  
-      onProgressUpdate(100);
+      onProgressUpdate(98); // Almost done
+      
+      // Small delay to show progress completion
+      setTimeout(() => onProgressUpdate(100), 200);
+      
       const endTime = Date.now();
       const duration = endTime - startTime;
       console.log("Cleaning time: ", duration)
