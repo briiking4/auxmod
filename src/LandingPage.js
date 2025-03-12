@@ -43,7 +43,7 @@ const LandingPage = () => {
           laptop: '100%',
           desktop: '100%',
         },
-        height: '100dvh',
+        height: '100vh',
         display: 'flex',
         flexDirection: 'column',
         background: 'linear-gradient(90deg, #87ceeb, #FFD8A8)',
@@ -61,11 +61,11 @@ const LandingPage = () => {
       <Box 
         sx={{
           float: 'left', 
-          maxWidth: '120px', 
+          maxWidth: '100px', 
           display: 'flex', 
           flexDirection: 'column', 
           textAlign: 'center',
-          mt: { mobile: 2, tablet: 3 },
+          mt: { mobile: 1, tablet: 3 },
           ...(isLargeScreen && {
             position: 'absolute',
             top: '16px',
@@ -75,7 +75,7 @@ const LandingPage = () => {
         }}
       >
         <img width="100%" src={logo} alt="auXmod logo" />
-        <Typography variant='h6' color='black' sx={{fontSize:'1.7rem'}}>
+        <Typography variant='h6' color='black' sx={{fontSize:'1.5rem'}}>
           auXmod
         </Typography>
       </Box>
@@ -314,8 +314,8 @@ const LandingPage = () => {
       laptop: '70vw' // Use vw units to make width responsive to viewport width
     }, 
     height: { 
-      mobile: '100dvh', 
-      tablet: '100dvh', 
+      mobile: '105dvh', 
+      tablet: '100dvw', 
       laptop: '70vw' // Match height to width to maintain circle shape
     }, 
     transform: isLargeScreen ? 'translateY(-50%)' : 'translateX(-50%)',
