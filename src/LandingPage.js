@@ -43,7 +43,7 @@ const LandingPage = () => {
           laptop: '100%',
           desktop: '100%',
         },
-        height: '100vh',
+        height: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         background: 'linear-gradient(90deg, #87ceeb, #FFD8A8)',
