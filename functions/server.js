@@ -90,7 +90,7 @@ function generateRandomString(length){
 
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
-    const frontendUri = prod ? process.env.FRONTEND_URI : 'http://localhost:3000';
+    const frontendUri = prod ? process.env.FRONTEND_URI : 'http://localhost:3000/app';
     res.redirect(
       `${frontendUri}/#${querystring.stringify({
         access_token,

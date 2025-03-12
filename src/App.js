@@ -287,7 +287,7 @@ export default function App() {
     }
     <Box 
         sx={{
-          mt: 'auto', // Pushes the footer to the bottom
+          mt: 'auto', 
           textAlign: 'left',
           width: '100%',
         }}
