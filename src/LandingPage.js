@@ -13,7 +13,7 @@ import PersonIcon from '@mui/icons-material/Person';
 
 const LandingPage = () => {
   const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('desktop'));
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('laptop'));
   const [open, setOpen] = React.useState(false);
 
   const handleClickOpen = () => {
@@ -250,9 +250,9 @@ const LandingPage = () => {
             bottom: !isLargeScreen && '-5%',
             left: !isLargeScreen && '50%',
             top: isLargeScreen && '-14%',
-            right: isLargeScreen && '-56vh', 
-            width: isLargeScreen ? '130vh' : '180%', 
-            height: isLargeScreen ? '130vh' : '57%', 
+            right: isLargeScreen && '-56dvh', 
+            width: isLargeScreen ? '130dvh' : '90dvh', 
+            height: isLargeScreen ? '130dvh' : '60dvh', 
             transform: isLargeScreen ? 'none' : 'translateX(-50%)',
             borderRadius: '50%',
             background: 'linear-gradient(180deg, #fceabb, #FFD8A8)',
