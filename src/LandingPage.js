@@ -17,8 +17,6 @@ const LandingPage = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('tablet'));
   const [open, setOpen] = React.useState(false);
 
-  console.log("is it a large screen?", isLargeScreen)
-
   const handleClickOpen = () => {
     setOpen(true);
   };
@@ -52,7 +50,7 @@ const LandingPage = () => {
         position: 'relative',
         overflow: 'hidden', 
         px: { mobile: 2, tablet: 3 },
-        pb: { mobile: '12dvh', tablet: 4 }, // Dynamic padding using dvh
+        pb: { mobile: '12dvh', tablet: 4 },
         ...(isLargeScreen && {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr', 
@@ -86,7 +84,6 @@ const LandingPage = () => {
       {/* Main content - on left side for large screens */}
       <Box 
         sx={{
-          mt: {tablet: 10 }, 
           mb: { tablet: 1 },
           textAlign: 'center',
           position: 'relative', 
@@ -97,8 +94,11 @@ const LandingPage = () => {
           ...(isLargeScreen && {
             gridColumn: '1',
             pl: 4,
+            mr: 4, // Add margin to ensure content doesn't touch circle
           }),
-          transform: 'translateY(35%)'
+          // Adjusted positioning to avoid touching the circle
+          transform: isLargeScreen ? 'translateY(0)' : 'translateY(20%)',
+          marginTop: isLargeScreen ? '10vh' : 0
         }}
       >
         <Typography variant='h3' sx={{
@@ -266,23 +266,23 @@ const LandingPage = () => {
       }
 
      
-      {/* Background circle - from right side on large screens, half-circle from bottom on mobile */}
+      {/* Background circle - from right side on large screens, half-circle from bottom on mobile
       <Box 
         sx={{
             position: 'absolute',
             bottom: !isLargeScreen ? '-50%' : 'auto', 
             left: !isLargeScreen ? '50%' : 'auto',
             top: isLargeScreen ? '-14%' : 'auto',
-            right: isLargeScreen ? '-56dvh' : 'auto', 
+            right: isLargeScreen ? '-35%' : 'auto', // Adjusted to come just shy of center
             width: { 
               mobile: '200%', 
               tablet: '180%', 
-              laptop: '135dvh' 
+              laptop: '120dvh' // Reduced size to fit less than half the viewport
             }, 
             height: { 
-              mobile: '100dvh', // Dynamic height
-              tablet: '100dvh', // Dynamic height
-              laptop: '135vh' 
+              mobile: '100dvh', 
+              tablet: '100dvh', 
+              laptop: '120dvh' 
             }, 
             transform: !isLargeScreen ? 'translateX(-50%)' : 'none',
             borderRadius: '50%',
@@ -298,162 +298,127 @@ const LandingPage = () => {
               boxShadow: 'inset 0 0 0 15px rgba(255, 255, 255, 0.1), inset 0 0 0 30px rgba(255, 255, 255, 0.1), inset 0 0 0 45px rgba(255, 255, 255, 0.1), inset 0 0 0 60px rgba(255, 255, 255, 0.1)'
             }
         }}
-      />
+      /> */}
 
-      {/* Display images container - positioned independently for mobile/tablet */}
-      <Box 
+{/* Background circle - from right side on large screens, half-circle from bottom on mobile */}
+<Box 
+  sx={{
+    position: 'absolute',
+    bottom: !isLargeScreen ? '-50%' : 'auto', 
+    left: !isLargeScreen ? '50%' : 'auto',
+    top: isLargeScreen ? '50%' : 'auto',
+    right: isLargeScreen ? '-25%' : 'auto', // Position circle to extend ~45% into viewport
+    width: { 
+      mobile: '200%', 
+      tablet: '180%', 
+      laptop: '70vw' // Use vw units to make width responsive to viewport width
+    }, 
+    height: { 
+      mobile: '100dvh', 
+      tablet: '100dvh', 
+      laptop: '70vw' // Match height to width to maintain circle shape
+    }, 
+    transform: isLargeScreen ? 'translateY(-50%)' : 'translateX(-50%)',
+    borderRadius: '50%',
+    background: 'linear-gradient(180deg, #fceabb, #FFD8A8)',
+    zIndex: 0,
+  }}
+/>
+
+  {/* Display images - responsive for all screen sizes */}
+  <Box 
+    sx={{
+      position: 'absolute',
+      ...(isLargeScreen ? {
+        top: '50%',
+        right: '10%',
+        transform: 'translateY(-50%)',
+        height: '60vh',
+        width: '25%',
+      } : {
+        bottom: '45%', // Move up from bottom edge
+        left: '50%',
+        transform: 'translateX(-50%)',
+        height: 'auto',
+        width: '80%',
+        maxWidth: '300px',
+      }),
+      zIndex: 1,
+      display: 'block',
+      pointerEvents: 'none'
+    }}
+  >
+    {/* Container for the overlapping images */}
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      {/* smaller display (display_1) */}
+      <Box
         sx={{
           position: 'absolute',
-          bottom: {
-            mobile: '10dvh', // Close to bottom of visible area
-            tablet: '4dvh',
-          },
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: {
-            mobile: '60%', 
-            tablet: '35%',
-          },
-          display: !isLargeScreen ? 'flex' : 'none',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1,
-          // Make sure the images stay within the circle bounds
-          maxHeight: {
-            mobile: '28dvh',
-            tablet: '28dvh'
-          },
+          ...(isLargeScreen ? {
+            width: '75%',
+            left: '-2vw',
+            top: '50%',
+            transform: 'translateY(-50%)',
+          } : {
+            width: '80%',
+            left: '-12vw',
+            top: '0',
+            transform: 'translateY(0)',
+          }),
         }}
       >
-        {/* Larger display (display_1) */}
-        <Box
-          sx={{
-            position: 'relative',
-            width: '70%',
-            right: '30%',
-            // Scale down if needed to fit within circle
-            maxWidth: {
-              mobile: '100%',
-              tablet: '100%'
-            },
+        <img 
+          src={display_1} 
+          alt="Display 1"
+          style={{
+            width: '100%',
+            height: 'auto',
+            display: 'block',
+            borderRadius: '8px',
+            objectFit: 'contain',
+            maxHeight: isLargeScreen ? '70vh' : '40vh',
           }}
-        >
-          <img 
-            src={display_1} 
-            alt="Display 1"
-            style={{
-              width: '100%',
-              height: 'auto',
-              display: 'block',
-              borderRadius: '8px',
-              maxHeight: '100%',
-              objectFit: 'contain'
-            }}
-          />
-        </Box>
-
-        {/* Smaller display (display_2) centered on top of display_1 */}
-        <Box
-          sx={{
-            position: 'absolute',
-            width: '75%',
-            left: '40%',
-            // Scale down if needed to fit within circle
-            maxWidth: {
-              mobile: '100%',
-              tablet: '100%'
-            },
-          }}
-        >
-          <img 
-            src={display_2} 
-            alt="Display 2"
-            style={{
-              width: '100%',
-              height: 'auto',
-              display: 'block',
-              borderRadius: '8px',
-              maxHeight: '100%',
-              objectFit: 'contain'
-            }}
-          />
-        </Box>
+        />
       </Box>
+      {/* larger display (display_2) */}
 
-      {/* Display images for large screen - inside circle */}
-      {isLargeScreen && (
-        <Box 
-          sx={{
-            position: 'relative',
-            // Using percentage of parent container
-            maxWidth: {
-              laptop: '50%',
-              desktop: '50%'
-            },
-            // Use height constraint to ensure it stays in circle
-            maxHeight: '60%',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gridColumn: '2',
-            alignSelf: 'center',
-            justifySelf: 'center',
-            zIndex: 1,
-            // Add this to ensure the images are contained within the circle
-            overflow: 'visible',
-            // This will help position the images relative to the circle
-            marginRight: '10%',
-            transform: 'translate(20dvh)',
-            top:'-75%'
+      <Box
+        sx={{
+          position: 'absolute',
+          ...(isLargeScreen ? {
+            width: '80%',
+            right: '-8vw',
+            top: '50%',
+            transform: 'translateY(-50%)',
+          } : {
+            width: '80%',
+            right: '-12vw',
+            top: '15%',
+            transform: 'translateY(0)',
+          }),
+        }}
+      >
+        <img 
+          src={display_2} 
+          alt="Display 2"
+          style={{
+            width: '100%',
+            height: 'auto',
+            display: 'block',
+            borderRadius: '8px',
+            objectFit: 'contain',
+            maxHeight: isLargeScreen ? '70vh' : '40vh',
           }}
-        >
-          {/* Larger display (display_1) */}
-          <Box
-            sx={{
-              position: 'relative',
-              width: '70%',
-              right: '30%',
-              // Ensure image scales appropriately
-              maxHeight: '100%',
-            }}
-          >
-            <img 
-              src={display_1} 
-              alt="Display 1"
-              style={{
-                width: '100%',
-                height: 'auto',
-                display: 'block',
-                borderRadius: '8px',
-                objectFit: 'contain'
-              }}
-            />
-          </Box>
-
-          {/* Smaller display (display_2) centered on top of display_1 */}
-          <Box
-            sx={{
-              position: 'absolute',
-              width: '75%',
-              left: '40%',
-              // Ensure image scales appropriately
-              maxHeight: '100%',
-            }}
-          >
-            <img 
-              src={display_2} 
-              alt="Display 2"
-              style={{
-                width: '100%',
-                height: 'auto',
-                display: 'block',
-                borderRadius: '8px',
-                objectFit: 'contain'
-              }}
-            />
-          </Box>
-        </Box>
-      )}
+        />
+      </Box>
+    </Box>
+  </Box>
 
       <Box 
         sx={{
