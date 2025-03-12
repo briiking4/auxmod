@@ -336,7 +336,7 @@ const LandingPage = () => {
         height: '60vh',
         width: '25%',
       } : {
-        bottom: '45%', // Move up from bottom edge
+        top: '50%',
         left: '50%',
         transform: 'translateX(-50%)',
         height: 'auto',
@@ -382,7 +382,7 @@ const LandingPage = () => {
             display: 'block',
             borderRadius: '8px',
             objectFit: 'contain',
-            maxHeight: isLargeScreen ? '70vh' : '40vh',
+            maxHeight: isLargeScreen ? '70vh' : '50vh',
           }}
         />
       </Box>
@@ -413,7 +413,7 @@ const LandingPage = () => {
             display: 'block',
             borderRadius: '8px',
             objectFit: 'contain',
-            maxHeight: isLargeScreen ? '70vh' : '40vh',
+            maxHeight: isLargeScreen ? '70vh' : '50vh',
           }}
         />
       </Box>
