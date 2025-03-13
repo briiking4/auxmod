@@ -48,16 +48,14 @@ const LandingMobile = () => {
                     </Box>
                 </Box>
             </Box>
-            <Box sx={{pl:4}}>
+            <Box sx={{pl:4, display:'flex', justifyContent:'flex-start'}}>
                 <Button 
                     component={Link} 
                     to="/app" 
                     variant="contained" 
                     sx={{ 
-                    mt: 4,
                     borderRadius: '50px', 
                     px: 4,
-                    py: 1.5,
                     fontSize: '1.1rem',
                     backgroundColor: 'secondary.main',
                     }}
@@ -70,7 +68,7 @@ const LandingMobile = () => {
         {/* "Playlist" items */}
 
 
-        <Box sx={{display:'flex', flexDirection:'column', gap:8, mt:10, pl:2}}>
+        <Box sx={{display:'flex', flexDirection:'column', gap:8, mt:5, pl:2}}>
 
             <Box sx={{display:'flex', flexDirection:'row', gap:2, alignItems:'center'}}>
                 <Typography variant='h6'> 1 </Typography>
