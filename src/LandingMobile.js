@@ -65,8 +65,8 @@ const LandingMobile = () => {
                             <img src={prof_pic} width="100%" style={{objectFit:'cover'}}/>
                         </Box>
                         <Box sx={{display:'flex', flexDirection:'column'}}> 
-                            <Typography variant='h5'> Briana King </Typography>
-                            <Typography variant='h7'> brianaking626@gmail.com </Typography>
+                            <Typography variant='h5'>Briana King</Typography>
+                            <Typography variant='h7'>brianaking626@gmail.com</Typography>
                         </Box>
                     </Box>
                 </Box>

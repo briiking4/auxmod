@@ -44,7 +44,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
   async function CreateCleanedPlaylist(playlist) {
     const newPlaylist = await spotifyApi.createPlaylist(userId, {
       name: `${playlist.name}`,
-      description: `Clean version of ${playlist.name} without ${formatter.format(chosenFilters)} content. Filtered using Cleanify.`,
+      description: `Clean version of ${playlist.name} without ${formatter.format(chosenFilters)} content. Filtered using auXmod.`,
     });
 
     const trackUris = playlist.tracksAdded.map((track) => track.uri);
