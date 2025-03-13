@@ -367,8 +367,27 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       // 4. Finalize results (95-100% progress)
       console.log("Finalizing playlist");
       onProgressUpdate(96); // Start of finalization phase
-      
-      const allCleanTracks = [...tracksData.cleanTracks, ...foundCleanTracks];
+
+      // prevents duplicates:
+      const trackUris = new Set();
+      const allCleanTracks = [];
+
+      // First add all the initially clean tracks
+      tracksData.cleanTracks.forEach(track => {
+        if (!trackUris.has(track.uri)) {
+          trackUris.add(track.uri);
+          allCleanTracks.push(track);
+        }
+      });
+
+      // Then add found clean tracks
+      foundCleanTracks.forEach(track => {
+        if (!trackUris.has(track.uri)) {
+          trackUris.add(track.uri);
+          allCleanTracks.push(track);
+        }
+      });
+            
       
       // Determine which tracks were excluded (those that needed clean versions but none were found)
       const foundCleanTrackIds = new Set(foundCleanTracks.map(track => track.id));
