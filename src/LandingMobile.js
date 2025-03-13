@@ -215,7 +215,7 @@ const LandingMobile = () => {
                 </Box>
                 <Box sx={{display:'flex', flexDirection:'column'}}>
                     <Typography variant='h6'> Businesses, Schools & Families </Typography>
-                    <Typography variant='caption'> Keep your music safe for work, school, or family time</Typography>
+                    <Typography variant='caption'> Keep music safe in stores, cafés, around children, etc.</Typography>
                 </Box>
 
             </Box>
