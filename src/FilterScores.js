@@ -2,13 +2,20 @@ import {
 	RegExpMatcher,
 	englishDataset,
 	englishRecommendedTransformers,
+  DataSet,
 } from 'obscenity';
 
 
-const FilterScores = async (songTitle, songArtist) => {
+const FilterScores = async (songTitle, songArtist, chosenFilters) => {
 
   console.log("props on mount" + songTitle);
   console.log("props on mount" + songArtist);
+
+  console.log("props on mount filters in filter scores" + chosenFilters);
+
+  const profanityFilter = chosenFilters.find(filter => filter.label === "Profanity");
+  
+  console.log("profanity filter: " + profanityFilter.options.whitelist);
 
 
 
@@ -45,13 +52,22 @@ const FilterScores = async (songTitle, songArtist) => {
       }
     }
 
-  
-  const matcher = new RegExpMatcher({
-    ...englishDataset.build(),
-    ...englishRecommendedTransformers,
-  });
+//UGHHHHHH i cant get the whitelist to work
 
-  const checkProfanity = async (lyrics) => {
+  const checkProfanity = async (lyrics, whitelist) => {      
+    console.log("whitelist: ", whitelist);
+
+    const myDataset = new DataSet()
+      .addAll(englishDataset)
+      .removePhrasesIf((phrase) => whitelist.map(w => w.toLowerCase()).includes(phrase.metadata.originalWord.toLowerCase()))
+
+    // Set up the matcher
+    const matcher = new RegExpMatcher({
+      blacklistedTerms: myDataset.build().blacklistedTerms,
+      whitelistedTerms: whitelist, 
+      ...englishRecommendedTransformers,
+    });
+
 
     if(lyrics){
 
@@ -112,7 +128,14 @@ const FilterScores = async (songTitle, songArtist) => {
       const lyrics = await getLyrics(songTitle, songArtist);
       console.log("LYRICS FROM GETSCORE FUNCTION")
 
-      const hasProfanity = await checkProfanity(lyrics);
+      let hasProfanity = null
+
+      if(profanityFilter){
+        const whitelist = profanityFilter.options.whitelist
+        console.log("the whitelist is: (in get mod results: ", whitelist)
+        hasProfanity = await checkProfanity(lyrics, whitelist);
+      }
+      
 
       const themeModeration = await checkModeration(lyrics);
 

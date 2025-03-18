@@ -1,45 +1,30 @@
 import * as React from 'react';
-import { useState, useRef, useEffect } from 'react';
-import {Container, Typography, Button, IconButton, Box, LinearProgress, Alert, Tooltip, CircularProgress} from '@mui/material';
+import { useState, useEffect } from 'react';
+import {Container, Typography, Button, IconButton, Box, LinearProgress, Tooltip, CircularProgress} from '@mui/material';
 import Filter from './Filter';
+import AdvancedFilters from './AdvancedFilters';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import InfoIcon from '@mui/icons-material/Info';
 import ReactGA from 'react-ga4';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import InfoIcon from '@mui/icons-material/Info';
 
-// Create a simple event emitter outside component to avoid re-renders
-const filterState = {
-  hasSelectedFilters: false,
-  currentFilters: []
-};
 
-export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, sendChosenFilters, progress}) {
+export default function SetFilters({sendStatus, onApplyFilters, sendChosenFilters, progress}) {
   const [loading, setLoading] = useState(false);
-  // Only for the button disabled state
   const [buttonDisabled, setButtonDisabled] = useState(true);
-
-  const [loadingProgress, setProgress] = useState(0);
-
-  // Google Analytics tracking:
+  const [currentFilters, setCurrentFilters] = useState([]); // Use state for currentFilters
+  const [settingsApplied, setSettingsApplied] = useState(false);
 
   useEffect(() => {
-      ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Set Filters" });
+    ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Set Filters" });
   }, []);
 
-
-  // Function passed to Filter component that doesn't trigger re-renders in SetFilters
   const handleFilterUpdate = (filters) => {
-    // Store filters without causing a re-render
-    filterState.currentFilters = filters;
-    
-    // Check if any filters are selected
+    console.log("handling new filter in setfilter: ", filters);
+    setCurrentFilters(filters); // Update state for filters
+
     const anySelected = filters.some(filter => filter.isSelected);
-    filterState.hasSelectedFilters = anySelected;
-    
-    // Only update state if button disabled status changed
-    if (buttonDisabled !== !anySelected) {
-      setButtonDisabled(!anySelected);
-    }
+    setButtonDisabled(!anySelected);
   };
 
   const handleApplyFilters = async () => {
@@ -50,13 +35,16 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
 
     setLoading(true);
     
-    // Get the currently selected filter labels
-    const selectedFiltersList = filterState.currentFilters
+    const selectedFiltersLabels = currentFilters
       .filter(filter => filter.isSelected)
       .map(filter => filter.label);
-    
-    // Send chosen filters to parent
-    sendChosenFilters(selectedFiltersList);
+
+    const selectedFiltersList = currentFilters
+      .filter(filter => filter.isSelected);
+
+    console.log("selected filters list", selectedFiltersList);
+
+    sendChosenFilters(selectedFiltersLabels);
     onApplyFilters(selectedFiltersList);
   };
 
@@ -64,20 +52,37 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
     sendStatus(state);
   };
 
+  const handleWhitelist = (list) => {
+    console.log("Received whitelist: ", list);
+    const profanityFilterIndex = currentFilters.findIndex(
+      filter => filter.label === 'Profanity'
+    );
+
+    if (profanityFilterIndex !== -1) {
+      const updatedFilters = [...currentFilters];
+      updatedFilters[profanityFilterIndex].options.whitelist = list;
+      setCurrentFilters(updatedFilters); // Update the state with the new whitelist
+    }
+  };
+
+  const handleSettingsApplied = (state) =>{
+    console.log("recived settings applied", state)
+    setSettingsApplied(state)
+  }
+
   return (
-    <Container sx={{ mt: 2, p:0 }}>
-      <Box sx={{mt:-3}}>
+    <Container sx={{ mt: 2, p: 0 }}>
+      <Box sx={{ mt: -3 }}>
         <IconButton
           aria-label="back"
           size="large"
           onClick={async () => {
-            // setProgress(0);
             sendStepStatus(false);
           }}
-          sx={{p:0, mb:2}}
+          sx={{ p: 0, mb: 2 }}
           disabled={loading}
         >
-          <ArrowBackIcon sx={{ p: 0}} fontSize="inherit" />
+          <ArrowBackIcon sx={{ p: 0 }} fontSize="inherit" />
         </IconButton>
       </Box>
 
@@ -85,14 +90,15 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
       <Box sx={{ mt: 1, mb: 2, display: 'flex', alignItems: 'center' }}>
         <Typography variant="body2" sx={{ mr: 1 }}>Select one or more:</Typography>
         <Tooltip title="Profanity filter will swap for clean/radio version replacements if available." 
-        enterTouchDelay={0} 
-        leaveTouchDelay={3000}>
+          enterTouchDelay={0} 
+          leaveTouchDelay={3000}>
           <InfoIcon fontSize="small" color="secondary.main" />
         </Tooltip>
       </Box>
 
       <Filter sendModerationFiltersStatus={handleFilterUpdate} type="moderation" loading={loading}/>
 
+      <AdvancedFilters sendWhitelist={handleWhitelist} filtersState={currentFilters} loading={loading} sendSettingsApplied={handleSettingsApplied}/>
 
       <Box sx={{ position: 'relative', mt: 5, maxWidth: '180px' }}>
         <Button 
@@ -102,11 +108,11 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
             overflow: 'hidden',
             borderRadius: '50px',
             width: '100%',
-            height: '48px', // Consistent height
+            height: '48px',
             transition: 'all 0.3s ease',
             boxShadow: loading ? '0 0 10px rgba(25, 118, 210, 0.5)' : 'none',
           }}
-          disabled={buttonDisabled}
+          disabled={buttonDisabled || !settingsApplied}
           onClick={!loading ? handleApplyFilters : undefined}
         >
           <Box sx={{ 
@@ -138,37 +144,25 @@ export default function SetFilters({sendStatus, chosenPlaylist, onApplyFilters, 
               </>
             )}
           </Box>
-          
-          {loading && (
-            <>
-              <LinearProgress 
-                variant="determinate" 
-                value={progress} 
-                sx={{ 
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: 'primary.dark',
-                  borderRadius: 'inherit',
-                  zIndex: 1,
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: 'primary.main',
-                    transition: 'transform 0.4s ease',
-                  }
-                }}
-              />
-            </>
-          )}
         </Button>
 
-        <style jsx global>{`
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-          }
-        `}</style>
+        {loading && (
+          <LinearProgress 
+            variant="determinate" 
+            value={progress} 
+            sx={{ 
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'primary.dark',
+              borderRadius: 'inherit',
+              zIndex: 1,
+              borderRadius:'50px'
+            }}
+          />
+        )}
       </Box>
     </Container>
   );
