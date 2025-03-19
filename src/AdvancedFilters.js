@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, } from 'react';
-import { Box, Button, SvgIcon, Typography, Accordion, AccordionActions, AccordionSummary, AccordionDetails, TextField} from '@mui/material';
+import { Box, Button, SvgIcon, Typography, Accordion, AccordionActions, AccordionSummary, AccordionDetails, TextField, Snackbar} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ClearIcon from '@mui/icons-material/Clear';
 
@@ -22,7 +22,7 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
   const [profanityOpen, setProfanityOpen] = useState(false)
   const [whitelist, setWhitelist] = useState([])
   const [inputValue, setInputValue] = useState("")
-
+  const [snackbarOpen, setSnackbar ] = useState(false);
 
   useEffect(() => {
     if (profanityOpen) {
@@ -46,6 +46,7 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
 
 
     const handleSubmit = (event) => {
+
       const value = inputValue.trim()
         event.preventDefault();
         if (value && !whitelist.includes(value)) {
@@ -71,53 +72,71 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
       sendWhitelist(whitelist);
       setProfanityOpen(false);
       sendSettingsApplied(true);
+      setSnackbar(true);
     }
 
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar(false);
+  };
+
     const showProfanity =
-    <Accordion expanded={profanityOpen} onChange={handleProfanityToggle} disabled={loading}>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel3-content"
-            id="panel3-header"
-          >
-            <Typography component="span">Advanced Profanity Settings</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{display:"flex", flexDirection:'column' }}>
-              <Typography fontWeight='bold' >
-                Allow specific words:
-              </Typography>
-              <Typography fontStyle='italic' variant='caption' >
-              (Words that are okay, such as ass, shit, bitch, etc.)
-              </Typography>
-              <Box sx={{display:'flex', flexDirection:'row', mt:1}}>
-              <form onSubmit={handleSubmit}>
-                <TextField                      
-                id="filled-basic" 
-                label="Word" 
-                variant="filled" 
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                />
-              </form>
-              <Button onClick={handleSubmit}>Add</Button>
-              </Box>
-              <Box sx={{display:'flex', flexDirection:'row', gap:2,mt:1}}>
-                {whitelist.map((word, index) => (
-                <Button variant="outlined" startIcon={<ClearIcon />} onClick={() => handleClear(index)}>
-                {word}
-                </Button>
+    <Box>
+      <Accordion expanded={profanityOpen} onChange={handleProfanityToggle} disabled={loading}>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              aria-controls="panel3-content"
+              id="panel3-header"
+            >
+              <Typography component="span">Advanced Profanity Settings</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box sx={{display:"flex", flexDirection:'column' }}>
+                <Typography fontWeight='bold' >
+                  Allow specific words:
+                </Typography>
+                <Typography fontStyle='italic' variant='caption' >
+                (Words that are okay, such as ass, shit, bitch, etc.)
+                </Typography>
+                <Box sx={{display:'flex', flexDirection:'row', mt:1}}>
+                <form onSubmit={handleSubmit}>
+                  <TextField                      
+                  id="filled-basic" 
+                  label="Word" 
+                  variant="filled" 
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  />
+                </form>
+                <Button onClick={handleSubmit}>Add</Button>
+                </Box>
+                <Box sx={{display:'flex', flexDirection:'row', gap:2,mt:1}}>
+                  {whitelist.map((word, index) => (
+                  <Button variant="outlined" startIcon={<ClearIcon />} onClick={() => handleClear(index)}>
+                  {word}
+                  </Button>
 
-               ))}
+                ))}
+                </Box>
               </Box>
-            </Box>
 
-          </AccordionDetails>
-          <AccordionActions>
-            <Button onClick={handleCancel}>Cancel</Button>
-            <Button onClick={handleConfirm}>Confirm</Button>
-          </AccordionActions>
-        </Accordion>
+            </AccordionDetails>
+            <AccordionActions>
+              <Button onClick={handleCancel}>Cancel</Button>
+              <Button onClick={handleConfirm}>Confirm</Button>
+            </AccordionActions>
+          </Accordion>
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={5000}
+            message="Whitelist has been set."
+            onClose={handleSnackbarClose}
+            sx={{maxWidth:'200px'}}
+          />
+      </Box>
 
   
   return (
