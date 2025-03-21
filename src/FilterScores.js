@@ -15,7 +15,7 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
 
   const profanityFilter = chosenFilters.find(filter => filter.label === "Profanity");
   
-  console.log("profanity filter: " + profanityFilter.options.whitelist);
+  // console.log("profanity filter: " + profanityFilter?.options.whitelist);
 
 
 
