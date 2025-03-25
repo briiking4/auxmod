@@ -3,6 +3,7 @@ import {
 	englishDataset,
 	englishRecommendedTransformers,
   DataSet,
+  parseRawPattern
 } from 'obscenity';
 
 
@@ -52,14 +53,18 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
       }
     }
 
-//UGHHHHHH i cant get the whitelist to work
 
   const checkProfanity = async (lyrics, whitelist) => {      
     console.log("whitelist: ", whitelist);
 
     const myDataset = new DataSet()
       .addAll(englishDataset)
-      .removePhrasesIf((phrase) => whitelist.map(w => w.toLowerCase()).includes(phrase.metadata.originalWord.toLowerCase()))
+
+      // Remove phrases that match whitelist items
+    myDataset.removePhrasesIf((phrase) => {
+      whitelist.map(w => w.toLowerCase()).includes(phrase.metadata.originalWord.toLowerCase());
+    });
+      
 
     // Set up the matcher
     const matcher = new RegExpMatcher({
@@ -69,17 +74,83 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
     });
 
 
-    if(lyrics){
+    //LEFT OFF HERE: just need to test it out and then i can set the termId to find what the actual word is and then replace the whitelist found logic with that
+    // Setting myself up for some really nice occurances feature! --  but not the priority right now i want to make the reason and the exclude work and then i can add that 
+    // or not ill eval then 
 
-      if (matcher.hasMatch(lyrics)) {
-        console.log("Profanity detected!");
-        return true;
-      } else {
-        console.log("No profanity found.");
-        return false;
-      }
-    }else{
-      return false;
+    const whitelistWordsFound = new Set();
+    let whitelistedWordsInLyrics = [];
+    const blacklistedWordsFound = new Set();
+    let blacklistedWordsInLyrics = [];
+    const whitelistWordCountOccurrences = {}
+    const blacklistWordCountOccurrences = {}
+
+
+    if(whitelist){
+        
+      const listForWhitelistMatcher = whitelist.map((word, index) => ({
+        id: index,
+        pattern: parseRawPattern(word),
+        originalWord: word
+      }));
+
+      console.log("list for whitelist matcher", listForWhitelistMatcher);
+
+      // Set up the matcher
+      const whitelistMatcher = new RegExpMatcher({
+        blacklistedTerms: listForWhitelistMatcher,
+        ...englishRecommendedTransformers,
+      });
+      const whitelistMatches = whitelistMatcher.getAllMatches(lyrics)
+
+      whitelistMatches.forEach(word => {
+        const originalWord = listForWhitelistMatcher.find(originalWord => originalWord.id === word.termId).originalWord
+        whitelistWordCountOccurrences[originalWord] = (whitelistWordCountOccurrences[originalWord] || 0) + 1;
+        whitelistWordsFound.add(originalWord)
+      });
+      console.log("whitelist word count occurance", whitelistWordCountOccurrences)
+      whitelistedWordsInLyrics = Array.from(whitelistWordsFound)  
+    }
+
+    if (!lyrics) {
+      return { hasProfanity: false, whitelistedWordsFound: [], whitelistOccurrences: {}, blacklistedWordsFound:[], blacklistOccurences: {}
+      };
+    }
+  
+    if (matcher.hasMatch(lyrics)) {
+      console.log("Profanity detected!");
+      const blacklistMatches = matcher.getAllMatches(lyrics)
+      console.log("black list matches", blacklistMatches)
+      const blacklistMatchesMeta = blacklistMatches.map(myDataset.getPayloadWithPhraseMetadata.bind(myDataset));
+      blacklistMatchesMeta.map((word) =>{
+        blacklistedWordsFound.add(word.phraseMetadata.originalWord)
+        blacklistWordCountOccurrences[word.phraseMetadata.originalWord] = (blacklistWordCountOccurrences[word.phraseMetadata.originalWord] || 0) + 1;
+
+      })
+      console.log("blacklisted matches", blacklistMatches)
+      console.log("blacklisted matches w meta", blacklistMatchesMeta)
+      console.log("blacklisted words found", blacklistedWordsFound)
+
+
+      blacklistedWordsInLyrics = Array.from(blacklistedWordsFound)  
+
+      return { 
+        hasProfanity: true, 
+        whitelistedWordsFound: whitelistedWordsInLyrics,
+        whitelistOccurrences: whitelistWordCountOccurrences,
+        blacklistedWordsFound: blacklistedWordsInLyrics,
+        blacklistOccurences: blacklistWordCountOccurrences
+
+      };
+    } else {
+      console.log("No profanity found.");
+      return { 
+        hasProfanity: false, 
+        whitelistedWordsFound: whitelistedWordsInLyrics,
+        whitelistOccurrences: whitelistWordCountOccurrences,
+        blacklistedWordsFound: blacklistedWordsInLyrics,
+        blacklistOccurences: blacklistWordCountOccurrences
+      };
     }
   }
 
@@ -128,12 +199,13 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
       const lyrics = await getLyrics(songTitle, songArtist);
       console.log("LYRICS FROM GETSCORE FUNCTION")
 
-      let hasProfanity = null
+      let profanityResult = null
 
       if(profanityFilter){
         const whitelist = profanityFilter.options.whitelist
         console.log("the whitelist is: (in get mod results: ", whitelist)
-        hasProfanity = await checkProfanity(lyrics, whitelist);
+        profanityResult = await checkProfanity(lyrics, whitelist);
+        console.log("profanity object: ", profanityResult)
       }
       
 
@@ -141,7 +213,7 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
 
       console.log("Theme Moderation", themeModeration)
 
-      return {status: 'success', sexually_explicit: themeModeration.sexual , profanity: hasProfanity , violence: themeModeration.violence}
+      return {status: 'success', sexually_explicit: themeModeration.sexual , profanity: profanityResult , violence: themeModeration.violence}
 
 
       // const mod_response = await fetch(`${apiUrl_mod}?key=${apiKey}`, {

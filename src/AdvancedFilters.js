@@ -91,7 +91,10 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
               aria-controls="panel3-content"
               id="panel3-header"
             >
+              <Box sx={{display:'flex', flexDirection:'column'}}>
               <Typography component="span">Advanced Profanity Settings</Typography>
+              <Typography variant="caption">Profanity auto-blocks cuss words, explicit sexual terms, and derogatory language. Customize with advanced settings.</Typography> 
+              </Box>
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{display:"flex", flexDirection:'column' }}>
@@ -99,7 +102,7 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
                   Allow specific words:
                 </Typography>
                 <Typography fontStyle='italic' variant='caption' >
-                (Words that are okay, such as ass, shit, bitch, etc.)
+                (Whitelist words that you feel should not be flagged by the profanity filter. Such as 'sex', 'shit', 'ass', etc.)
                 </Typography>
                 <Box sx={{display:'flex', flexDirection:'row', mt:1}}>
                 <form onSubmit={handleSubmit}>

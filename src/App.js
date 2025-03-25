@@ -15,8 +15,8 @@ import ReactGA from 'react-ga4';
 
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 
-// LEFT OFF: handle undo
-// make a landing page?? or add stuff on the app login? 
+// LEFT OFF: playlist_track_number carry over for find clean versions and tracks pull from cache too
+
 
 export default function App() {
 

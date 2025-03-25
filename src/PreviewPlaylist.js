@@ -22,7 +22,11 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import ExplicitIcon from '@mui/icons-material/Explicit';
 import DiscFullIcon from '@mui/icons-material/DiscFull';
 import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import CheckIcon from '@mui/icons-material/Check';
+import SoapIcon from '@mui/icons-material/Soap';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 
 import ProfanityIcon from './ProfanityIcon';
 import ViolenceIcon from './ViolenceIcon';
@@ -30,7 +34,7 @@ import ViolenceIcon from './ViolenceIcon';
 
 
 
-export default function PreviewPlaylist({ id, tracksList, view, handleAddAnyway }) {
+export default function PreviewPlaylist({ id, tracksList, view, handleAddAnyway, handleExclude }) {
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [playingTrackId, setPlayingTrackId] = useState(null);
@@ -187,11 +191,19 @@ useEffect(() => {
         >
           <TableHead sx={{ position: "sticky", top: 0, backgroundColor: '#ebebeb'}}>
             <TableRow>
-              <TableCell sx={{width:"70%", p:'10px'}}>Title</TableCell>
-              {view === "excluded" && (
+              <TableCell sx={{p:'10px'}}>Title</TableCell>
+              {(view === "excluded" || view === "included") &&(
                 <>
-                  <TableCell sx={{textAlign: "right", p:'10px'}}>Reason</TableCell>
-                  <TableCell sx={{textAlign: "right", p:'10px'}}>Include</TableCell>
+                  <TableCell sx={{textAlign: view === "included" ? 'center' : 'right', p:'10px', width:'25%'}}>Reason</TableCell>
+                  <TableCell sx={{textAlign: "right", p:'10px', width:'15%'}}>
+                    {
+                      view === "included" ? 
+                      "Exclude"
+                      :
+                      "Include"
+
+                    }
+                  </TableCell>
                 </>
               )}
             </TableRow>
@@ -214,7 +226,7 @@ useEffect(() => {
               {tracks.map((track) => (
                 <TableRow hover role="checkbox" tabIndex={-1} key={track.id}>
                   {/* Tracks data */}
-                  <TableCell sx={{width:"70%"}}>
+                  <TableCell>
                     <Box sx={{overflow:'hidden', display:'flex', gap:0.8}}>
                       <img
                         width="50px"
@@ -236,10 +248,11 @@ useEffect(() => {
                           variant="body1"
                           fontWeight="bold"
                           sx={{
+                            width:'100%',
+                            overflow: "hidden", 
                             lineHeight: 1.2,
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
-                            display: "block",
                           }}
                         >
                           {track.name}
@@ -249,7 +262,13 @@ useEffect(() => {
                           <Typography
                             variant="body2"
                             color="text.secondary"
-                            sx={{ lineHeight: 1.2}}
+                            sx={{     
+                              width: '100%',
+                              overflow: "hidden", 
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              lineHeight: 1.2
+                            }}
                           >
                             {track.artists[0].name}
                           </Typography>
@@ -259,17 +278,17 @@ useEffect(() => {
                   </TableCell>
     
                   {/* Show reason only if the view is "excluded" */}
-                  {view === "excluded" && (
+                  {(view === "excluded" || view=== "included") && (
                     <>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={{width:'25%'}}>
                         <Box sx={{
                           display: 'flex',
-                          justifyContent: 'flex-end',
+                          justifyContent: view === "included" ? 'center' : 'flex-end',
                           alignItems: 'center',
                           height: '100%'
                         }}>
                           {track.reason && track.reason.includes('Profanity') && (
-                            <Tooltip title="Profanity"
+                            <Tooltip title={`Profanity: ${track.score.profanity.blacklistedWordsFound?.join(', ')}`}
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
                             >
@@ -294,28 +313,69 @@ useEffect(() => {
                             </Tooltip>
                           )}
                           {track.reason && track.reason.includes('No score') && (
-                            <Tooltip title="Unable to verify"
+                            <Tooltip title="Lyrics unavailable"
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
                             >
                               <span style={{marginLeft: '4px'}}><DiscFullIcon/></span>
                             </Tooltip>
                           )}
+                           {track.reason && track.reason.includes('clean version') && (
+                            <Tooltip title="Clean version found"
+                              enterTouchDelay={0} 
+                              leaveTouchDelay={3000}
+                            >
+                              <span style={{marginLeft: '4px'}}><SoapIcon/></span>
+                            </Tooltip>
+                          )}
+                          {track.reason && track.reason.includes('passed filters') && (track.score.profanity.whitelistedWordsFound.length === 0) && (
+                            <Tooltip title="Passed all filters"
+                              enterTouchDelay={0} 
+                              leaveTouchDelay={3000}
+                            >
+                              <span style={{marginLeft: '4px'}}><VerifiedIcon/></span>
+                            </Tooltip>
+                          )}
+                          {track.reason && track.score && (track.score.profanity.whitelistedWordsFound.length > 0) && track.reason.includes('passed filters') && (
+                            <Tooltip title={`Contains allowed words: ${track.score.profanity.whitelistedWordsFound?.join(', ')}`}
+                              enterTouchDelay={0} 
+                              leaveTouchDelay={3000}
+                            >
+                              <span style={{marginLeft: '4px'}}><FactCheckIcon/></span>
+                            </Tooltip>
+                          )}
+
                         </Box>
                       </TableCell>
-                      <TableCell align="right">
-                        <IconButton 
-                          aria-label="add-anyway" 
+                      <TableCell align="right" sx={{width:'15%'}}>
+                        {
+                          view === "excluded" && (
+                          <IconButton 
+                          aria-label="add-track" 
                           size="small"
                           onClick={() => handleAddAnyway(track)}
                         >
                           <AddIcon />
                         </IconButton>
+                          )
+                        }
+
+                        {
+                          view === "included" && (
+                            <IconButton 
+                            aria-label="exlude-track" 
+                            size="small"
+                            onClick={() => handleExclude(track)}
+                          >
+                            <RemoveIcon />
+                          </IconButton>
+                          )
+                        }
                       </TableCell>
                     </>
                   )}
                     
-                  {(view === 'included' || view === 'preview') && 
+                  {(view === 'preview') && 
                     <TableCell size="small" sx={{textAlign:'right'}}>
                       <IconButton
                         onClick={() => handlePlayPause(track)}

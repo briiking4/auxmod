@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import {Container, Typography, Button, IconButton, Box, LinearProgress, Tooltip, CircularProgress} from '@mui/material';
+import {Container, Typography, Button, IconButton, Box, LinearProgress, Tooltip, CircularProgress, Alert} from '@mui/material';
 import Filter from './Filter';
 import AdvancedFilters from './AdvancedFilters';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -86,14 +86,15 @@ export default function SetFilters({sendStatus, onApplyFilters, sendChosenFilter
         </IconButton>
       </Box>
 
-      <Typography variant="h6">Exclude songs with:</Typography>
-      <Box sx={{ mt: 1, mb: 2, display: 'flex', alignItems: 'center' }}>
-        <Typography variant="body2" sx={{ mr: 1 }}>Select one or more:</Typography>
-        <Tooltip title="Profanity filter will swap for clean/radio version replacements if available." 
+      <Typography variant="h6">Filter out songs that contain:</Typography>
+      <Box sx={{ mt: 1, mb: 2, display: 'flex', flexDirection:'column' }}>
+        <Typography variant="body2" sx={{ mr: 1, mb:1 }}>Select one or more:</Typography>
+        <Alert severity="info">Tracks must pass all selected filters to be included. Only the profanity filter swaps a clean version, if available.</Alert>
+        {/* <Tooltip title="Profanity filter will swap for clean/radio version replacements if available." 
           enterTouchDelay={0} 
           leaveTouchDelay={3000}>
           <InfoIcon fontSize="small" color="secondary.main" />
-        </Tooltip>
+        </Tooltip> */}
       </Box>
 
       <Filter sendModerationFiltersStatus={handleFilterUpdate} type="moderation" loading={loading}/>

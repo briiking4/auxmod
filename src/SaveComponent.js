@@ -10,6 +10,10 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import DiscFullIcon from '@mui/icons-material/DiscFull';
 import CloseIcon from '@mui/icons-material/Close';
 
+import SoapIcon from '@mui/icons-material/Soap';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
+
 import ReactGA from 'react-ga4';
 
 
@@ -19,8 +23,9 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
   const [localCleanedPlaylist, setLocalCleanedPlaylist] = useState(cleanedPlaylist)
   const [open, setOpen] = React.useState(false);
   const [includeTrack, setIncludeTrack] = useState(null)
-  const [originalIndex, setOriginalIndex] = useState(null);
-
+  const [excludeTrack, setExcludeTrack] = useState(null)
+  const [originalIndexIncluded, setOriginalIndexIncluded] = useState(null);
+  const [originalIndexExcluded, setOriginalIndexExcluded] = useState(null);
 
    // Google Analytics tracking:
 
@@ -76,11 +81,12 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
     const excludedIndex = localCleanedPlaylist.excludedTracks.findIndex(
       (excludedTrack) => excludedTrack.id === track.id
     );
-    
+
     // store the track and its original index
     setIncludeTrack(track);
-    setOriginalIndex(excludedIndex);
+    setOriginalIndexExcluded(excludedIndex);
     setOpen(true);
+    
     
     ReactGA.event({
       category: 'User',
@@ -101,6 +107,42 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
     setLocalCleanedPlaylist(updatedPlaylist);
   };
 
+  const handleExcludeTrack = (track) => {
+    console.log("excluded ", track);
+    // find the index of the track in included array before removing it
+    const includedIndex = localCleanedPlaylist.tracksAdded.findIndex(
+      (includedTrack) => includedTrack.id === track.id
+    );
+
+    // store the track and its original index
+    setExcludeTrack(track);
+    setOriginalIndexIncluded(includedIndex);
+    setOpen(true);
+        
+    
+    
+    ReactGA.event({
+      category: 'User',
+      action: 'Include Excluded Track'
+    });
+
+    // deep copy of the current playlist state
+    const updatedPlaylist = JSON.parse(JSON.stringify(localCleanedPlaylist));
+    
+    // Add the track to excludedTracks array
+    updatedPlaylist.excludedTracks.push(track);
+    
+    // Remove the track from tracksAdded array
+    updatedPlaylist.tracksAdded = updatedPlaylist.tracksAdded.filter(
+      (includedTrack) => includedTrack.id !== track.id
+    );
+    console.log("the updated playlist is: ", updatedPlaylist)
+    setLocalCleanedPlaylist(updatedPlaylist);
+  };
+
+  
+
+
   const handleClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
@@ -109,18 +151,19 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
     setOpen(false);
   };
 
-  const handleUndo = () => {
+  const handleUndo = (view) => {
     // deep copy of the current playlist state
     const updatedPlaylist = JSON.parse(JSON.stringify(localCleanedPlaylist));
 
+    if(view === 'excluded'){
     // remove the track from tracksAdded array
     updatedPlaylist.tracksAdded = updatedPlaylist.tracksAdded.filter(
-      (includedTrack) => includedTrack.id !== includeTrack.id
+      (includedTrack) => includedTrack.id !== includeTrack?.id
     );
     
     // add the track back to excludedTracks array at its original index
-    if (originalIndex !== null && originalIndex >= 0) {
-      updatedPlaylist.excludedTracks.splice(originalIndex, 0, includeTrack);
+    if (originalIndexExcluded !== null && originalIndexExcluded >= 0) {
+      updatedPlaylist.excludedTracks.splice(originalIndexExcluded, 0, includeTrack);
     } else {
       // fallback in case the index isn't available
       updatedPlaylist.excludedTracks.push(includeTrack);
@@ -128,12 +171,33 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
      
     console.log("the updated playlist is: ", updatedPlaylist);
     setLocalCleanedPlaylist(updatedPlaylist);
+
+    }else
+    if(view === 'included'){
+      // remove the track from excludedTracks array
+    updatedPlaylist.excludedTracks = updatedPlaylist.excludedTracks.filter(
+      (excludedTrack) => excludedTrack.id !== excludeTrack?.id
+    );
+    
+    // add the track back to excludedTracks array at its original index
+    if (originalIndexIncluded !== null && originalIndexIncluded >= 0) {
+      updatedPlaylist.tracksAdded.splice(originalIndexIncluded, 0, excludeTrack);
+    } else {
+      // fallback in case the index isn't available
+      updatedPlaylist.tracksAdded.push(excludeTrack);
+    }
+     
+    console.log("the updated playlist is: ", updatedPlaylist);
+    setLocalCleanedPlaylist(updatedPlaylist);
+
+    }
+
     setOpen(false);
   }
 
-  const undo = (
+  const undo = (viewType) => (
     <>
-      <Button color="primary" size="small" onClick={handleUndo}>
+      <Button color="primary" size="small" onClick={() => handleUndo(viewType)}>
         UNDO
       </Button>
       <IconButton
@@ -168,6 +232,8 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
         </IconButton>
 
         <Typography variant="h6">{cleanedPlaylist?.name}</Typography>
+        <Typography variant="caption">Filters: {chosenFilters.join(', ')}</Typography>
+
       </Box>
 
       {localCleanedPlaylist ? (
@@ -242,7 +308,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                       justifyContent: 'center', 
                       alignItems: 'center', 
                       flexWrap: 'wrap', 
-                      gap: 2, 
+                      gap: 1, 
                       px: 2
                     }}
                   >
@@ -252,7 +318,35 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                       { icon: <LocalFireDepartmentIcon />, label: 'Sexual' },
                     ]
                     .filter(item => chosenFilters.includes(item.label)) // Show only chosen filters
-                    .concat({ icon: <DiscFullIcon />, label: 'Unable to verify' }) // Always include this
+                    .concat({ icon: <DiscFullIcon />, label: 'Lyrics unavailable' }) // Always include this
+                    .map((item, index) => (
+                      <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <IconButton size="small" disabled>
+                          {item.icon}
+                        </IconButton>
+                        <Typography variant="caption">{item.label}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )
+              }
+              {
+                view === 'included' && (
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      alignItems: 'center', 
+                      flexWrap: 'wrap', 
+                      gap: 1, 
+                      px: 2
+                    }}
+                  >
+                    {[
+                      { icon: <VerifiedIcon />, label: 'Passed filters' },
+                      { icon: <SoapIcon sx={{ transform: 'translateY(-2px)' }} />, label: 'Clean version' },
+                      { icon: <FactCheckIcon />, label: 'Has allowed word(s)' },
+                    ]
                     .map((item, index) => (
                       <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
                         <IconButton size="small" disabled>
@@ -278,6 +372,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               view={view}
               tracksList={JSON.parse(JSON.stringify(displayedTracks))}
               handleAddAnyway={handleIncludeAnyway}
+              handleExclude={handleExcludeTrack}
 
             />
           </Box>
@@ -287,10 +382,11 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
             open={open}
             onClose={handleClose}
             message="Track included in playlist"
-            action={undo}
+            action={view === 'included' ? undo('included') : undo('excluded')}
             sx={{ mx:'auto', maxWidth:'300px'}}
           />
-          
+
+
 
 
           {/* Save Button - Fixed at bottom */}
