@@ -328,7 +328,7 @@ useEffect(() => {
                               <span style={{marginLeft: '4px'}}><SoapIcon/></span>
                             </Tooltip>
                           )}
-                          {track.reason && track.reason.includes('passed filters') && (track.score.profanity.whitelistedWordsFound.length === 0) && (
+                          {track.reason && track.reason.includes('passed filters') && (track.score.profanity == null || (track.score.profanity?.whitelistedWordsFound.length === 0)) && (
                             <Tooltip title="Passed all filters"
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
@@ -336,8 +336,8 @@ useEffect(() => {
                               <span style={{marginLeft: '4px'}}><VerifiedIcon/></span>
                             </Tooltip>
                           )}
-                          {track.reason && track.score && (track.score.profanity.whitelistedWordsFound.length > 0) && track.reason.includes('passed filters') && (
-                            <Tooltip title={`Contains allowed words: ${track.score.profanity.whitelistedWordsFound?.join(', ')}`}
+                          {track.reason && track.score && (track.score.profanity?.whitelistedWordsFound.length > 0) && track.reason.includes('passed filters') && (
+                            <Tooltip title={`Contains allowed words: ${track.score.profanity?.whitelistedWordsFound?.join(', ')}`}
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
                             >
