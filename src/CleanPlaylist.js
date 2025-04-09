@@ -184,7 +184,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           item.reason = [];
           let failedFilter = false;
             
-          if (item.score && item.status === 'success') {
+          if (item.score && item.score.status === 'success') {
             if ((chosenFilters.find(filter => filter.label === "Profanity")) && (item.score.profanity.hasProfanity)) {
               item.reason.push("Profanity");
               failedFilter = true;
