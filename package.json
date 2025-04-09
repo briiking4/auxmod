@@ -29,6 +29,7 @@
     "openai": "^4.86.1",
     "p-limit": "^6.2.0",
     "path": "^0.12.7",
+    "posthog-js": "^1.234.9",
     "querystring": "^0.2.1",
     "react": "latest",
     "react-dom": "latest",

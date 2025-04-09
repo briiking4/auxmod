@@ -14,9 +14,19 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App';
 import LandingPage from './LandingPage';
 import theme from './theme';
+import posthog from 'posthog-js';
+import { PostHogProvider } from 'posthog-js/react';
+
 
 const rootElement = document.getElementById('root');
 const root = ReactDOM.createRoot(rootElement);
+
+posthog.init(process.env.REACT_APP_PUBLIC_POSTHOG_KEY, {
+  api_host: process.env.REACT_APP_PUBLIC_POSTHOG_HOST,
+  debug: true
+});
+
+
 
 root.render(
   <ThemeProvider theme={theme}>
@@ -25,10 +35,16 @@ root.render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/app" element={<App />} />
+        <Route path="/app" element={
+        <PostHogProvider client={posthog}>
+          <App />
+        </PostHogProvider>
+      } 
+        />
         {/* Redirect other routes to landing page */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
-  </ThemeProvider>,
+  </ThemeProvider>
+
 );

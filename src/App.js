@@ -11,6 +11,11 @@ import Login from './Login';
 import CleanPlaylist from './CleanPlaylist';
 import { setAccessToken } from './spotifyApi';
 import ReactGA from 'react-ga4';
+import posthog from 'posthog-js';
+import { usePostHog } from 'posthog-js/react'
+import Survey from './Survey';
+
+
 
 
 import FirstPageIcon from '@mui/icons-material/FirstPage';
@@ -60,10 +65,16 @@ export default function App() {
   const [stepsStatus, setStepsStatus] = useState([false, false, false])
 
   //Google Analytics tracking:
+  const [showSurvey, setShowSurvey] = useState(true)
+  const [survey, setSurvey] = useState(null)
+
+  
+  const posthog = usePostHog()
+
 
   useEffect(() => {
-    
     ReactGA.initialize('G-VKQ70YNR1N', { testMode: process.env.NODE_ENV !== 'production' });
+
     if(loggedIn){
       ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Main App - User logged in" });
       ReactGA.set({
@@ -72,6 +83,49 @@ export default function App() {
     }
   }, []);
 
+  const [surveyTitle, setSurveyTitle] = useState(false)
+  const surveyID = '01960c65-28ec-0000-2e34-127215b80bfa'
+
+
+  useEffect(() => {
+    if (userId) {
+        // Identify sends an event, so you may want to limit how often you call it
+        posthog?.identify(userId, {
+            userId: userId,
+        })
+
+        posthog.getActiveMatchingSurveys((surveys) => {
+          console.log("SURVEYS:", surveys)
+          if (surveys.length > 0) {
+            const survey = surveys.find(s => s.id === surveyID)
+            setSurvey(survey)
+            // setSurveyTitle(survey.questions[0].question)
+          }
+        }, true)
+    }
+}, [posthog, userId])
+
+
+
+// const handleDismiss = () => {
+//   console.log("Survey dismissed!")
+//   posthog.capture("survey dismissed", {
+//     $survey_id: surveyID // required
+//   })
+// }
+
+const handleSubmit = (value) => {
+  setShowSurvey(false)
+  console.log("User submitted:", value)
+  const feedback = value;
+  const responseKey = `$survey_response_${survey.questions[0].id}`;
+  console.log(responseKey)
+  console.log(feedback)
+  posthog.capture("survey sent", {
+    $survey_id: surveyID,
+    [responseKey]: feedback
+  })
+}
 
   // Recieving logged in status from the Login Compt
 
@@ -290,12 +344,21 @@ export default function App() {
           mt: 'auto', 
           textAlign: 'left',
           width: '100%',
+          display:'flex',
+          justifyContent:'space-between',
+          alignItems:'center'
         }}
       >
      <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
+     {loggedIn && (
+        <Survey
+          title={survey?.questions[0].question}
+          // onDismiss={handleDismiss}
+          onSubmit={handleSubmit}
+        />
+      )}
     </Box>
 
   </Container>
-
   );
 }
