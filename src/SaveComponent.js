@@ -10,6 +10,10 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import DiscFullIcon from '@mui/icons-material/DiscFull';
 import CloseIcon from '@mui/icons-material/Close';
 
+import ErrorIcon from '@mui/icons-material/Error';
+import MusicOffIcon from '@mui/icons-material/MusicOff';
+
+
 import SoapIcon from '@mui/icons-material/Soap';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
@@ -318,7 +322,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                       { icon: <LocalFireDepartmentIcon />, label: 'Sexual' },
                     ]
                     .filter(item => chosenFilters.includes(item.label)) // Show only chosen filters
-                    .concat({ icon: <DiscFullIcon />, label: 'Lyrics unavailable' }) // Always include this
+                    .concat([{ icon: <MusicOffIcon />, label: 'No lyrics' },{ icon: <ErrorIcon />, label: 'Error' } ]) // Always include this
                     .map((item, index) => (
                       <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
                         <IconButton size="small" disabled>

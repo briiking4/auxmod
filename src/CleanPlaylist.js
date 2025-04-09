@@ -184,7 +184,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           item.reason = [];
           let failedFilter = false;
             
-          if (item.score) {
+          if (item.score && item.status === 'success') {
             if ((chosenFilters.find(filter => filter.label === "Profanity")) && (item.score.profanity.hasProfanity)) {
               item.reason.push("Profanity");
               failedFilter = true;
@@ -198,8 +198,14 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
               failedFilter = true;
             }
           } else {
-            item.reason.push("No score");
-            failedFilter = true;
+         // Handle failed status
+            if(item.score && item.score.status === 'failed'){
+              item.reason.push("Error");
+              return { type: 'explicit', track: item }; // mark it for exclusion
+            } else {
+              item.reason.push("No score");
+              failedFilter = true;
+            }
           }
           // is the clean version
 
@@ -234,7 +240,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       console.log("batch results: ", batchResults)
 
       
-      // Process results - LEFT OFF: Cant read props of undefined "reading type" 
       for (const result of batchResults) {
         console.log("RESULT: ", result)
         if (result.type === 'clean') {

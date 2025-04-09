@@ -20,13 +20,16 @@ import AlbumIcon from "@mui/icons-material/Album";
 import spotifyApi from './spotifyApi'; 
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import ExplicitIcon from '@mui/icons-material/Explicit';
-import DiscFullIcon from '@mui/icons-material/DiscFull';
+import MusicOffIcon from '@mui/icons-material/MusicOff';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+
 import CheckIcon from '@mui/icons-material/Check';
 import SoapIcon from '@mui/icons-material/Soap';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import ErrorIcon from '@mui/icons-material/Error';
+
 
 import ProfanityIcon from './ProfanityIcon';
 import ViolenceIcon from './ViolenceIcon';
@@ -317,9 +320,18 @@ useEffect(() => {
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
                             >
-                              <span style={{marginLeft: '4px'}}><DiscFullIcon/></span>
+                              <span style={{marginLeft: '4px'}}><MusicOffIcon/></span>
                             </Tooltip>
                           )}
+                          {track.reason && track.reason.includes('Error') && (
+                            <Tooltip title="Error"
+                              enterTouchDelay={0} 
+                              leaveTouchDelay={3000}
+                            >
+                              <span style={{marginLeft: '4px'}}><ErrorIcon/></span>
+                            </Tooltip>
+                          )}
+
                            {track.reason && track.reason.includes('clean version') && (
                             <Tooltip title="Clean version found"
                               enterTouchDelay={0} 

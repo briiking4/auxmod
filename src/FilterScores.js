@@ -179,15 +179,15 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
             console.log("sexual: ", sexual_score);
             console.log("violent: ", violence_score);
 
-            return { sexual: sexual_score, violence: violence_score };
+            return { sexual: sexual_score, violence: violence_score, status: 'success' };
         } else {
             // If no flagged categories or results, return default values
             console.log("No moderation issues detected.");
-            return { sexual: null, violence: null };
+            return { sexual: null, violence: null, status: 'success' };
         }
     } catch (error) {
         console.error("Error checking moderation:", error);
-        return { sexual: null, violence: null }; // Return default values on error
+        return { sexual: null, violence: null, status: 'failed' }; // Return default values on error
     }
 }
 
@@ -213,7 +213,7 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
 
       console.log("Theme Moderation", themeModeration)
 
-      return {status: 'success', sexually_explicit: themeModeration.sexual , profanity: profanityResult , violence: themeModeration.violence}
+      return {status: themeModeration.status, sexually_explicit: themeModeration.sexual , profanity: profanityResult , violence: themeModeration.violence}
 
 
       // const mod_response = await fetch(`${apiUrl_mod}?key=${apiKey}`, {
