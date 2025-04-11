@@ -8,8 +8,8 @@ export const filterCategories = [
   {
     id: 'moderation',
     title: 'Filter out songs that contain:',
-    description: 'Select one or more:',
-    info: "Tracks must pass all filters. Clean versions swapped for profanity-only songs. Spanish support coming soon.",
+    description: 'Select one or more filters:',
+    info: "Clean versions swapped in for profanity-only songs. Spanish support for profanity filter coming soon.",
     placement: 'main', // Determines where this category appears
     order: 1, // Controls vertical ordering
     filters: [
