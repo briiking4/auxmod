@@ -167,6 +167,12 @@ useEffect(() => {
     );
   }
 
+  const redactWord = (word) => {
+    if (word.length <= 2) return '*'.repeat(word.length);
+    return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1];
+  };
+  
+
   return (
     <Paper sx={{ 
       width: "100%", 
@@ -291,7 +297,7 @@ useEffect(() => {
                           height: '100%'
                         }}>
                           {track.reason && track.reason.includes('Profanity') && (
-                            <Tooltip title={`Profanity: ${track.score.profanity.blacklistedWordsFound?.join(', ')}`}
+                            <Tooltip title={`Profanity: ${track.score.profanity.blacklistedWordsFound?.map(redactWord).join(', ')}`}
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
                             >

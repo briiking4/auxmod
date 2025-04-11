@@ -1,9 +1,13 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { Box, Button, SvgIcon, useMediaQuery, useTheme} from '@mui/material';
+import { Box, Button, SvgIcon, useMediaQuery, useTheme, Slider, Stack} from '@mui/material';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 
-export default function Filter({ sendSearchFilterStatus, sendModerationFiltersStatus, type, loading }) {
+
+
+export default function Filter({ sendSearchFilterStatus, sendModerationFiltersStatus, sendAudioFeatureFiltersStatus, type, loading }) {
   const [filtersList, setFilters] = useState([]);
 
   const theme = useTheme();
@@ -34,9 +38,15 @@ export default function Filter({ sendSearchFilterStatus, sendModerationFiltersSt
 
     if (type === 'moderation') {
       initialFilters = [
-        { label: 'Profanity', icon: profanityIcon, isSelected: false, options: {whitelist: []} },
-        { label: 'Violence', icon: violenceIcon, isSelected: false, options:{} },
-        { label: 'Sexual', icon: <LocalFireDepartmentIcon/>, isSelected: false, options:{} },
+        { label: 'Profanity', icon: profanityIcon, isSelected: false, display:'button', options: {whitelist: []} },
+        { label: 'Violence', icon: violenceIcon, isSelected: false, display:'button', options:{} },
+        { label: 'Sexual', icon: <LocalFireDepartmentIcon/>, isSelected: false, display:'button', options:{} },
+      ];
+    }
+
+    if(type === 'audio feature'){
+      initialFilters = [
+        { label: 'Loud', icon: <VolumeUpIcon/>, isSelected: false, display:'slider'},
       ];
     }
     
@@ -49,6 +59,9 @@ export default function Filter({ sendSearchFilterStatus, sendModerationFiltersSt
     if (type === 'moderation' && sendModerationFiltersStatus) {
       sendModerationFiltersStatus(initialFilters);
     }
+    if(type === 'audio feature' && sendAudioFeatureFiltersStatus){
+      sendAudioFeatureFiltersStatus(initialFilters);
+    }
   }, [type]);
 
   const handleFilterClick = (index) => {
@@ -59,7 +72,7 @@ export default function Filter({ sendSearchFilterStatus, sendModerationFiltersSt
           ...item,
           isSelected: i === index
         };
-      } else if (type === "moderation") {
+      } else if (type === "moderation" || type === "audio feature") {
         // Toggle behavior for moderation
         if (i === index) {
           return {
@@ -83,9 +96,12 @@ export default function Filter({ sendSearchFilterStatus, sendModerationFiltersSt
     if (type === 'moderation' && sendModerationFiltersStatus) {
       sendModerationFiltersStatus(updatedFilters);
     }
+    if (type === 'audio feature' && sendAudioFeatureFiltersStatus) {
+      sendAudioFeatureFiltersStatus(updatedFilters);
+    }
   };
 
-  const showFilters = (list) => (
+  const showButtonFilters = (list) => (
     <Box
       sx={{
         width: '90%',
@@ -99,6 +115,7 @@ export default function Filter({ sendSearchFilterStatus, sendModerationFiltersSt
       }}
     >
       {list.map((filter, index) => (
+        filter.display === "button" && 
         <Button
           key={index}
           disabled={loading}
@@ -123,10 +140,30 @@ export default function Filter({ sendSearchFilterStatus, sendModerationFiltersSt
       ))}
     </Box>
   );
+
+  const [sliderValue, setSliderValue] = useState(0);
+
+  const handleChange = (event, newValue) => {
+    setSliderValue(newValue);
+  };
+
+
+  const showSliderFilter= () => (
+
+    <Box sx={{ width: 200 }}>
+      <Stack spacing={2} direction="row" sx={{ alignItems: 'center', mb: 1 }}>
+        <VolumeDownIcon />
+        <Slider aria-label="Volume" value={sliderValue} onChange={handleChange} />
+        <VolumeUpIcon />
+      </Stack>
+    </Box>
+  );
   
   return (
     <>
-      {showFilters(filtersList)}
+      {showButtonFilters(filtersList)}
+
+      {type === "audio feature" && showSliderFilter(filtersList)}
     </>
   );
 }

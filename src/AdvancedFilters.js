@@ -102,7 +102,7 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
                   Allow specific words:
                 </Typography>
                 <Typography fontStyle='italic' variant='caption' >
-                (Whitelist words that you feel should not be flagged by the profanity filter. Such as 'sex', 'shit', 'ass', etc.)
+                (Whitelist words <b>that you feel are OKAY</b> and should not be flagged by the profanity filter. Such as 'sex', 'shit', 'ass', etc.)
                 </Typography>
                 <Box sx={{display:'flex', flexDirection:'row', mt:1}}>
                 <form onSubmit={handleSubmit}>

@@ -1,106 +1,146 @@
-import * as React from 'react';
-import { useState, useEffect } from 'react';
-import {Container, Typography, Button, IconButton, Box, LinearProgress, Tooltip, CircularProgress, Alert} from '@mui/material';
-import Filter from './Filter';
-import AdvancedFilters from './AdvancedFilters';
+// SetFilters.jsx
+import React, { useState, useEffect } from 'react';
+import { Container, Typography, Button, IconButton, Box, LinearProgress, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ReactGA from 'react-ga4';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import InfoIcon from '@mui/icons-material/Info';
+import ReactGA from 'react-ga4';
+import FilterCategory from './FilterCategory';
+import AdvancedFilters from './AdvancedFilters';
+import { filterCategories, iconMap } from './filterConfig';
 
-
-export default function SetFilters({sendStatus, onApplyFilters, sendChosenFilters, progress}) {
+export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilters, progress }) {
   const [loading, setLoading] = useState(false);
-  const [buttonDisabled, setButtonDisabled] = useState(true);
-  const [currentFilters, setCurrentFilters] = useState([]); // Use state for currentFilters
+  const [filterState, setFilterState] = useState({});
   const [settingsApplied, setSettingsApplied] = useState(false);
-
+  
+  // Initialize filter state from config
+  useEffect(() => {
+    const initialState = {};
+    
+    filterCategories.forEach(category => {
+      category.filters.forEach(filter => {
+        initialState[filter.id] = {
+          ...filter,
+          isSelected: filter.defaultSelected || false,
+          value: filter.defaultValue !== undefined ? filter.defaultValue : null
+        };
+      });
+    });
+    
+    setFilterState(initialState);
+  }, []);
+  
   useEffect(() => {
     ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Set Filters" });
   }, []);
-
-  const handleFilterUpdate = (filters) => {
-    console.log("handling new filter in setfilter: ", filters);
-    setCurrentFilters(filters); // Update state for filters
-
-    const anySelected = filters.some(filter => filter.isSelected);
-    setButtonDisabled(!anySelected);
+  
+  const handleFilterChange = (filterId, value) => {
+    setFilterState(prevState => {
+      const updatedFilter = { ...prevState[filterId] };
+      
+      if (value !== undefined) {
+        // For sliders and other value-based filters
+        updatedFilter.value = value;
+        updatedFilter.isSelected = true; // Auto-select when value changes
+      } else {
+        // For toggle/button filters
+        updatedFilter.isSelected = !updatedFilter.isSelected;
+      }
+      
+      return {
+        ...prevState,
+        [filterId]: updatedFilter
+      };
+    });
   };
-
-  const handleApplyFilters = async () => {
+  
+  const isAnyFilterSelected = () => {
+    return Object.values(filterState).some(filter => filter.isSelected);
+  };
+  
+  const handleApplyFilters = () => {
     ReactGA.event({
       category: 'User',
-      action: `Apply Filters Clicked`
+      action: 'Apply Filters Clicked'
     });
-
+    
     setLoading(true);
     
-    const selectedFiltersLabels = currentFilters
-      .filter(filter => filter.isSelected)
-      .map(filter => filter.label);
-
-    const selectedFiltersList = currentFilters
-      .filter(filter => filter.isSelected);
-
-    console.log("selected filters list", selectedFiltersList);
-
-    sendChosenFilters(selectedFiltersLabels);
-    onApplyFilters(selectedFiltersList);
+    const selectedFilters = Object.values(filterState).filter(filter => filter.isSelected);
+    const selectedLabels = selectedFilters.map(filter => filter.label);
+    
+    sendChosenFilters(selectedLabels);
+    onApplyFilters(selectedFilters);
   };
-
-  const sendStepStatus = (state) => {
-    sendStatus(state);
-  };
-
+  
   const handleWhitelist = (list) => {
-    console.log("Received whitelist: ", list);
-    const profanityFilterIndex = currentFilters.findIndex(
-      filter => filter.label === 'Profanity'
-    );
-
-    if (profanityFilterIndex !== -1) {
-      const updatedFilters = [...currentFilters];
-      updatedFilters[profanityFilterIndex].options.whitelist = list;
-      setCurrentFilters(updatedFilters); // Update the state with the new whitelist
-    }
+    setFilterState(prevState => {
+      if (!prevState.profanity) return prevState;
+      
+      return {
+        ...prevState,
+        profanity: {
+          ...prevState.profanity,
+          options: {
+            ...prevState.profanity.options,
+            whitelist: list
+          }
+        }
+      };
+    });
   };
-
-  const handleSettingsApplied = (state) =>{
-    console.log("recived settings applied", state)
-    setSettingsApplied(state)
-  }
-
+  
+  // Group filters by category and placement
+  const getCategoryFilters = (categoryId) => {
+    const category = filterCategories.find(cat => cat.id === categoryId);
+    if (!category) return [];
+    
+    return category.filters
+      .map(filter => filterState[filter.id])
+      .filter(Boolean); // Filter out any undefined filters
+  };
+  
+  // Sort categories by their order property
+  const sortedCategories = [...filterCategories].sort((a, b) => a.order - b.order);
+  
   return (
     <Container sx={{ mt: 2, p: 0 }}>
       <Box sx={{ mt: -3 }}>
         <IconButton
           aria-label="back"
           size="large"
-          onClick={async () => {
-            sendStepStatus(false);
-          }}
+          onClick={() => sendStatus(false)}
           sx={{ p: 0, mb: 2 }}
           disabled={loading}
         >
           <ArrowBackIcon sx={{ p: 0 }} fontSize="inherit" />
         </IconButton>
       </Box>
-
-      <Typography variant="h6">Filter out songs that contain:</Typography>
-      <Box sx={{ mt: 1, mb: 2, display: 'flex', flexDirection:'column' }}>
-        <Typography variant="body2" sx={{ mr: 1, mb:1 }}>Select one or more:</Typography>
-        <Alert severity="info">Tracks must pass all selected filters to be included. Only the profanity filter swaps a clean version, if available.</Alert>
-        {/* <Tooltip title="Profanity filter will swap for clean/radio version replacements if available." 
-          enterTouchDelay={0} 
-          leaveTouchDelay={3000}>
-          <InfoIcon fontSize="small" color="secondary.main" />
-        </Tooltip> */}
-      </Box>
-
-      <Filter sendModerationFiltersStatus={handleFilterUpdate} type="moderation" loading={loading}/>
-
-      <AdvancedFilters sendWhitelist={handleWhitelist} filtersState={currentFilters} loading={loading} sendSettingsApplied={handleSettingsApplied}/>
-
+      
+      {/* Render filter categories by their placement and order */}
+      {sortedCategories.map(category => (
+        <>
+          <FilterCategory
+            key={category.id}
+            category={category}
+            filters={getCategoryFilters(category.id)}
+            iconMap={iconMap}
+            onFilterChange={handleFilterChange}
+            disabled={loading}
+          />
+          {
+          category.id === 'moderation' && 
+          <AdvancedFilters 
+          sendWhitelist={handleWhitelist} 
+          filtersState={Object.values(filterState)} 
+          loading={loading} 
+          sendSettingsApplied={setSettingsApplied}
+        />
+        }
+      </>
+      ))}
+      
+      
       <Box sx={{ position: 'relative', mt: 5, maxWidth: '180px' }}>
         <Button 
           variant="contained" 
@@ -113,7 +153,7 @@ export default function SetFilters({sendStatus, onApplyFilters, sendChosenFilter
             transition: 'all 0.3s ease',
             boxShadow: loading ? '0 0 10px rgba(25, 118, 210, 0.5)' : 'none',
           }}
-          disabled={buttonDisabled || !settingsApplied}
+          disabled={!isAnyFilterSelected() || !settingsApplied}
           onClick={!loading ? handleApplyFilters : undefined}
         >
           <Box sx={{ 

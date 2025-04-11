@@ -30,6 +30,7 @@ const rateLimitedApi = {
 const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   console.log("CLEAN PLAYLIST COMP: The user and playlist id's are:", playlistId);
   console.log("CLEAN P COMP: Chosen filters - ", chosenFilters);
+  // left off here, I have loud as a chosen filter so now have to add it to logic
 
   let playlistName = '';
   let totalTrackCount = 0;
@@ -358,10 +359,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         
             return isClean && isSameArtist && (isExactNameMatch || isTitleClean);
           });
-
-          // LEFT OFF HERE. A REASON ARRAY NEEDS TO BE MADE. IT ISNT AT THIS POINT. THEN PUSH TO IT
-          // "clean version"
-
           
           if (cleanTrack) {
             cleanTrack.reason = [];
