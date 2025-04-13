@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { useState, useEffect, } from 'react';
-import { Box, Button, SvgIcon, Typography, Accordion, AccordionActions, AccordionSummary, AccordionDetails, TextField, Snackbar} from '@mui/material';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
+import { tooltipClasses } from "@mui/material/Tooltip";
+import { Box, Button, SvgIcon, Typography, Accordion, AccordionActions, AccordionSummary, AccordionDetails, TextField, Snackbar, Tooltip} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ClearIcon from '@mui/icons-material/Clear';
 
@@ -23,6 +25,8 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
   const [whitelist, setWhitelist] = useState([])
   const [inputValue, setInputValue] = useState("")
   const [snackbarOpen, setSnackbar ] = useState(false);
+  const [toolTipOpen, setTooltipOpen] = React.useState(false);
+
 
   useEffect(() => {
     if (profanityOpen) {
@@ -83,6 +87,60 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
     setSnackbar(false);
   };
 
+  const handleTooltipClose = () => {
+    setTooltipOpen(false);
+  };
+
+  const handleTooltipOpen = () => {
+    setTooltipOpen(true);
+  };
+
+  const suggestedWhitelist = [
+    {
+      category: "Mild Swearing",
+      terms: ["ass", "arse", "bastard", "piss", "shit", "wank"],
+    },
+    {
+      category: "Body Terms",
+      terms: ["boob", "penis", "tit", "vagina", "dick"],
+    },
+    {
+      category: "Sexual References",
+      terms: ["sex", "orgasm", "porn"],
+    },
+    {
+      category: "Cultural/Reclaimed Terms",
+      terms: ["nigga", "dyke", "tranny", "fag"],
+    },
+  ];
+  
+
+  const whiteListSuggestions =  
+    <React.Fragment>
+      <Box sx={{textAlign:'left'}}>
+         <Box>
+          {suggestedWhitelist.map((category) =>{
+            return(
+              <Box>
+              <Typography sx={{fontWeight:'bold'}}> 
+                {category.category}
+              </Typography>
+              <ul sx={{paddingInlineStart: 0}}>
+                {category.terms.map((word) =>{
+                  return(
+                    <li>{word}</li>
+                  )
+                })}
+              </ul>
+              </Box>
+            )
+          })}
+        </Box>
+      </Box>
+    </React.Fragment>
+  ;
+
+
     const showProfanity =
     <Box>
       <Accordion expanded={profanityOpen} onChange={handleProfanityToggle} disabled={loading}>
@@ -102,9 +160,9 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
                   Allow specific words:
                 </Typography>
                 <Typography fontStyle='italic' variant='caption' >
-                (Whitelist words <b>that you feel are OKAY</b> and should not be flagged by the profanity filter. Such as 'sex', 'shit', 'ass', etc.)
+                (Whitelist words <b>that you feel are OKAY</b> and should not be flagged by the profanity filter. ) 
                 </Typography>
-                <Box sx={{display:'flex', flexDirection:'row', mt:1}}>
+              <Box sx={{display:'flex', flexDirection:'row', mt:1}}>
                 <form onSubmit={handleSubmit}>
                   <TextField                      
                   id="filled-basic" 
@@ -125,6 +183,33 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
                 ))}
                 </Box>
               </Box>
+              <ClickAwayListener onClickAway={handleTooltipClose}>
+                    <Tooltip 
+                        sx={{
+                          '& .MuiTooltip-tooltip': {
+                            backgroundColor: 'black'
+                          }
+                        }}
+                      onClose={handleTooltipClose}
+                      open={toolTipOpen}
+                      disableFocusListener
+                      disableHoverListener
+                      disableTouchListener
+                      title={whiteListSuggestions}
+                      slotProps={{
+                        popper: {
+                          disablePortal: true,
+                          sx: {
+                            [`& .${tooltipClasses.tooltip}`]: {
+                              backgroundColor: 'rgb(97 97 97)'
+                            }
+                          }
+                        },
+                      }}
+                    >
+                      <Button onClick={handleTooltipOpen} sx={{'&.MuiButtonBase-root': {textTransform:'none'}}} >See suggested words</Button>
+                    </Tooltip>
+              </ClickAwayListener>
 
             </AccordionDetails>
             <AccordionActions>

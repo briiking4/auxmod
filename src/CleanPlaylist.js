@@ -186,15 +186,15 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           let failedFilter = false;
             
           if (item.score && item.score.status === 'success') {
-            if ((chosenFilters.find(filter => filter.label === "Profanity")) && (item.score.profanity.hasProfanity)) {
+            if ((chosenFilters.find(filter => filter.id === "profanity")) && (item.score.profanity.hasProfanity)) {
               item.reason.push("Profanity");
               failedFilter = true;
             }
-            if ((chosenFilters.find(filter => filter.label === "Violence")) && item.score.violence > 0.50) {
+            if ((chosenFilters.find(filter => filter.id === "violence")) && item.score.violence > 0.50) {
               item.reason.push("Violence");
               failedFilter = true;
             }
-            if ((chosenFilters.find(filter => filter.label === "Sexual")) && item.score.sexually_explicit > 0.50) {
+            if ((chosenFilters.find(filter => filter.id === "sexual")) && item.score.sexually_explicit > 0.50) {
               item.reason.push("Sexual");
               failedFilter = true;
             }

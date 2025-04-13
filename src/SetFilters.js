@@ -35,17 +35,24 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
   }, []);
   
   const handleFilterChange = (filterId, value) => {
+    console.log(filterId, value);
     setFilterState(prevState => {
       const updatedFilter = { ...prevState[filterId] };
       
-      if (value !== undefined) {
-        // For sliders and other value-based filters
-        updatedFilter.value = value;
-        updatedFilter.isSelected = true; // Auto-select when value changes
+      if (updatedFilter.type === 'slider') {
+        // If it's a slider filter
+        if (typeof value === 'boolean') {
+          // This is the switch toggle event
+          updatedFilter.isSelected = value;
+        } else if (typeof value === 'number') {
+          // This is the slider value change
+          updatedFilter.value = value;
+        }
       } else {
-        // For toggle/button filters
-        updatedFilter.isSelected = !updatedFilter.isSelected;
+         updatedFilter.isSelected = !updatedFilter.isSelected;
       }
+      console.log(updatedFilter);
+
       
       return {
         ...prevState,
@@ -53,7 +60,6 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
       };
     });
   };
-  
   const isAnyFilterSelected = () => {
     return Object.values(filterState).some(filter => filter.isSelected);
   };

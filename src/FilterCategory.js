@@ -1,6 +1,9 @@
-// FilterCategory.jsx
 import React from 'react';
-import { Box, Typography, Alert } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  Alert
+} from '@mui/material';
 import ButtonFilter from './FilterTypes/ButtonFilter';
 import SliderFilter from './FilterTypes/SliderFilter';
 
@@ -28,7 +31,7 @@ const FilterCategory = ({
           <SliderFilter
             key={filter.id}
             filter={filter}
-            onChange={(value) => onFilterChange(filter.id, value)}
+            onChange={onFilterChange}
             disabled={disabled}
             iconMap={iconMap}
           />
@@ -62,10 +65,12 @@ const FilterCategory = ({
       <Box 
         sx={{
           display: 'flex',
-          flexWrap: 'wrap',
-          gap: 1,
+          flexDirection: category.flexDirection,
+          gap: 2,
           justifyContent: 'flex-start',
-          alignItems: 'center'
+          flexWrap: 'wrap',
+          alignItems: 'stretch',
+          width: '100%',
         }}
       >
         {filters.map(renderFilter)}

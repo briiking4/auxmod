@@ -94,7 +94,7 @@ export default function App() {
             userId: userId,
         })
 
-        posthog.getSurveys((surveys) => {
+        posthog?.getSurveys((surveys) => {
           console.log("SURVEYS:", surveys)
           if (surveys.length > 0) {
             const survey = surveys.find(s => s.id === surveyID)

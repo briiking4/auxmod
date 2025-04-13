@@ -74,10 +74,6 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
     });
 
 
-    //LEFT OFF HERE: just need to test it out and then i can set the termId to find what the actual word is and then replace the whitelist found logic with that
-    // Setting myself up for some really nice occurances feature! --  but not the priority right now i want to make the reason and the exclude work and then i can add that 
-    // or not ill eval then 
-
     const whitelistWordsFound = new Set();
     let whitelistedWordsInLyrics = [];
     const blacklistedWordsFound = new Set();

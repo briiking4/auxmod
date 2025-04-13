@@ -347,7 +347,7 @@ useEffect(() => {
                             </Tooltip>
                           )}
                           {track.reason && track.reason.includes('passed filters') && (track.score.profanity == null || (track.score.profanity?.whitelistedWordsFound.length === 0)) && (
-                            <Tooltip title="Passed all filters"
+                            <Tooltip title="Passed selected filters"
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
                             >

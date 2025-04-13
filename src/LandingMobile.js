@@ -151,8 +151,7 @@ const LandingMobile = () => {
                         What is it?
                     </Typography>
                     <Typography gutterBottom>
-                        AuXmod is an app for playlist moderation, ensuring your playlists are safe for sensitive environments like
-                        retail stores, cafés, workplaces, and schools. It helps curate playlists free from explicit content while 
+                        AuXmod is an app for playlist moderation, ensuring your playlists are safe for sensitive environments. It helps curate playlists free from explicit content while 
                         preserving the music experience.
                     </Typography>
 
@@ -160,7 +159,7 @@ const LandingMobile = () => {
                         Who is it for?
                     </Typography>
                     <Typography gutterBottom>
-                        The app is designed for business owners, educators, parents, and anyone managing public or shared 
+                        The app is designed for parents and anyone managing public or shared 
                         spaces who want to maintain a family-friendly or professional atmosphere without compromising on music
                         quality.
                     </Typography>
@@ -214,8 +213,8 @@ const LandingMobile = () => {
 
                 </Box>
                 <Box sx={{display:'flex', flexDirection:'column'}}>
-                    <Typography variant='h6'> Businesses, Schools & Families </Typography>
-                    <Typography variant='caption'> Keep music safe in stores, cafés, around children, etc.</Typography>
+                    <Typography variant='h6'> Families & Professionals </Typography>
+                    <Typography variant='caption'> Keep music safe around professionals, children, etc.</Typography>
                 </Box>
 
             </Box>
