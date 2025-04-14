@@ -183,33 +183,36 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
                 ))}
                 </Box>
               </Box>
-              <ClickAwayListener onClickAway={handleTooltipClose}>
-                    <Tooltip 
-                        sx={{
-                          '& .MuiTooltip-tooltip': {
-                            backgroundColor: 'black'
-                          }
-                        }}
-                      onClose={handleTooltipClose}
-                      open={toolTipOpen}
-                      disableFocusListener
-                      disableHoverListener
-                      disableTouchListener
-                      title={whiteListSuggestions}
-                      slotProps={{
-                        popper: {
-                          disablePortal: true,
-                          sx: {
-                            [`& .${tooltipClasses.tooltip}`]: {
-                              backgroundColor: 'rgb(97 97 97)'
+              <Box sx={{display:'flex', flexDirection:'column', alignItems:'flex-start'}}>
+                <ClickAwayListener onClickAway={handleTooltipClose}>
+                      <Tooltip 
+                          sx={{
+                            '& .MuiTooltip-tooltip': {
+                              backgroundColor: 'black'
                             }
-                          }
-                        },
-                      }}
-                    >
-                      <Button onClick={handleTooltipOpen} sx={{'&.MuiButtonBase-root': {textTransform:'none'}}} >See suggested words</Button>
-                    </Tooltip>
-              </ClickAwayListener>
+                          }}
+                        onClose={handleTooltipClose}
+                        open={toolTipOpen}
+                        disableFocusListener
+                        disableHoverListener
+                        disableTouchListener
+                        title={whiteListSuggestions}
+                        slotProps={{
+                          popper: {
+                            disablePortal: true,
+                            sx: {
+                              [`& .${tooltipClasses.tooltip}`]: {
+                                backgroundColor: 'rgb(97 97 97)'
+                              }
+                            }
+                          },
+                        }}
+                      >
+                        <Button onClick={handleTooltipOpen} sx={{'&.MuiButtonBase-root': {textTransform:'none'}, p:0}} >Need help?</Button>
+                      </Tooltip>
+                </ClickAwayListener>
+                <Typography variant='caption' sx={{fontStyle:'italic'}}>warning: contains profane language</Typography>
+              </Box>
 
             </AccordionDetails>
             <AccordionActions>
