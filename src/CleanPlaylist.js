@@ -190,7 +190,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
               item.reason.push("Profanity");
               failedFilter = true;
             }
-            if ((chosenFilters.find(filter => filter.id === "violence")) && item.score.violence > 0.50) {
+            if ((chosenFilters.find(filter => filter.id === "violence")) && item.score.violence > 0.40) {
               item.reason.push("Violence");
               failedFilter = true;
             }
