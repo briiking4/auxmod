@@ -5,6 +5,7 @@ import {
   DataSet,
   parseRawPattern
 } from 'obscenity';
+import { spanishDataset, spanishEnglishBlacklistTransformers } from './spanishDataset.js';
 
 
 const FilterScores = async (songTitle, songArtist, chosenFilters) => {
@@ -59,18 +60,26 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
 
     const myDataset = new DataSet()
       .addAll(englishDataset)
+      .addAll(spanishDataset);
+
 
       // Remove phrases that match whitelist items
     myDataset.removePhrasesIf((phrase) => {
       whitelist.map(w => w.toLowerCase()).includes(phrase.metadata.originalWord.toLowerCase());
     });
+
+    const spanishWhitelist = [
+      'cumpleaños', 'cumplido', 'cumplir', 
+      'analizar', 'análisis',
+      'sexual', 'sexualidad',
+    ];
       
 
     // Set up the matcher
     const matcher = new RegExpMatcher({
       blacklistedTerms: myDataset.build().blacklistedTerms,
-      whitelistedTerms: whitelist, 
-      ...englishRecommendedTransformers,
+      whitelistedTerms: [...whitelist, ...spanishWhitelist], 
+      ...spanishEnglishBlacklistTransformers,
     });
 
 

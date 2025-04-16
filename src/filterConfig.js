@@ -9,8 +9,8 @@ export const filterCategories = [
     id: 'moderation',
     title: 'Explicit Theme Filters',
     description: 'Select one or more filters:',
-    info: "Clean versions swapped in for profanity-only songs. Profanity filter only supports songs in English.",
-    placement: 'main', // Determines where this category appears
+    info: "Songs must pass all selected filters to be included. If <em>only</em> profanity fails, we’ll swap in the clean version when available.",
+    placement: 'main', // where the category appears
     order: 1, 
     flexDirection:'row',
     filters: [

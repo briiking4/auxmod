@@ -58,7 +58,7 @@ const FilterCategory = ({
       
       {category.info && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          {category.info}
+          <span dangerouslySetInnerHTML={{ __html: category.info }} />
         </Alert>
       )}
       

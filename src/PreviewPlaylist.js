@@ -233,7 +233,7 @@ useEffect(() => {
           >
             <TableBody>
               {tracks.map((track) => (
-                <TableRow hover role="checkbox" tabIndex={-1} key={track.id}>
+                <TableRow hover role="checkbox" tabIndex={-1} key={track.id} onClick={() => handlePlayPause(track)}>
                   {/* Tracks data */}
                   <TableCell>
                     <Box sx={{overflow:'hidden', display:'flex', gap:0.8}}>
