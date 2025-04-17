@@ -260,11 +260,9 @@ export default function Search({ sendItemSelected }) {
   // Load more items for My Library search
   const loadMoreMyLibrarySearch = () => {
     if (!searchQuery) {
-      // Loading more without search query - just fetch next batch from API
       return handleShowMore();
     }
     
-    // With search query, we load more from our filtered results
     const normalizedQuery = searchQuery.toLowerCase();
     const filteredPlaylists = userPlaylists.filter(playlist => 
       playlist.name.toLowerCase().includes(normalizedQuery)
@@ -383,6 +381,8 @@ export default function Search({ sendItemSelected }) {
   // Calculate remaining items for "Show More" button
   const remainingItems = totalResults - searchList.length;
 
+  console.log('user pl', userPlaylists)
+
   return (
     <Box sx={{ 
       display: 'flex', 
@@ -425,7 +425,7 @@ export default function Search({ sendItemSelected }) {
         />
       </Container>
       
-      {/* Search Results or Skeleton */}
+      {/* Search Results or Mui Skeleton */}
       <Box sx={{
         flexGrow: 1,
         overflow: 'hidden',
@@ -479,9 +479,14 @@ export default function Search({ sendItemSelected }) {
                 p: 3
               }}>
                 <Typography variant="body1" color="text.secondary">
-                  {selectedFilter === 'My Library' && !searchQuery ? 
-                    "You don't have any playlists yet." : 
-                    "No playlists found. Try a different search term."}
+                  {selectedFilter === 'My Library' && userPlaylists.length === 0 &&
+                    "Library is empty. Seach for playlists in All of Spotify tab"
+                  }
+                  {selectedFilter === 'All of Spotify' && searchList.length === 0 && searchQuery  ? 
+                  "No playlists found. Try a different search term." :
+                  selectedFilter === 'All of Spotify' && !searchQuery &&
+                  "Search for any public playlist on Spotify!"
+                  }
                 </Typography>
               </Box>
             )}

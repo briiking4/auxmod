@@ -20,7 +20,7 @@ export default function Filter({ sendSearchFilterStatus, type, loading }) {
     if (type === 'search') {
       initialFilters = [
         { label: 'My Library', isSelected: true }, 
-        { label: 'All', isSelected: false },
+        { label: 'All of Spotify', isSelected: false },
       ];
     }
     
