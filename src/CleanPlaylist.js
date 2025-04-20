@@ -180,8 +180,17 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
 
           item.playlist_track_number = tracks.indexOf(trackItem);
 
+          let localItemName = item.name
+
+        // strip out the track name if it includes a "-"
+        if (item.name.includes("-")) {
+          localItemName = item.name.substring(0, item.name.indexOf("-")).trim();
+        } else {
+          localItemName = item.name;
+        }
+
           // Score the track
-          item.score = await FilterScores(item.name, item.artists[0].name, chosenFilters);
+          item.score = await FilterScores(localItemName, item.artists[0].name, chosenFilters);
           item.reason = [];
           let failedFilter = false;
             

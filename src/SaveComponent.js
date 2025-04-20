@@ -269,7 +269,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               }}
               onClick={() => setView('included')}
             >
-              Review Final Playlist
+              Review & Save Playlist
             </Button>
             <Button
               sx={{

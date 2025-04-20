@@ -203,13 +203,13 @@ useEffect(() => {
               <TableCell sx={{p:'10px'}}>Title</TableCell>
               {(view === "excluded" || view === "included") &&(
                 <>
-                  <TableCell sx={{textAlign: view === "included" ? 'center' : 'right', p:'10px', width:'25%'}}>Reason</TableCell>
-                  <TableCell sx={{textAlign: "right", p:'10px', width:'15%'}}>
+                  <TableCell sx={{textAlign: view === "included" ? 'center' : 'left', p:'10px', width:'25%'}}>Reason</TableCell>
+                  <TableCell sx={{textAlign: "center", p:'10px', width:'20%'}}>
                     {
                       view === "included" ? 
-                      "Exclude"
+                      "Remove"
                       :
-                      "Include"
+                      "Add Back"
 
                     }
                   </TableCell>
@@ -266,7 +266,7 @@ useEffect(() => {
                         >
                           {track.name}
                         </Typography>
-                        <Box sx={{display:'flex', flexDirection:'row', gap:0.5, alignItems: 'flex-end'}}>
+                        <Box sx={{display:'flex', flexDirection:'row', gap:0.5, alignItems: 'flex-start'}}>
                           {track.explicit && <ExplicitIcon/>}
                           <Typography
                             variant="body2"
@@ -292,7 +292,7 @@ useEffect(() => {
                       <TableCell align="right" sx={{width:'25%'}}>
                         <Box sx={{
                           display: 'flex',
-                          justifyContent: view === "included" ? 'center' : 'flex-end',
+                          justifyContent: view === "included" ? 'center' : 'flex-start',
                           alignItems: 'center',
                           height: '100%'
                         }}>
@@ -365,7 +365,7 @@ useEffect(() => {
 
                         </Box>
                       </TableCell>
-                      <TableCell align="right" sx={{width:'15%'}}>
+                      <TableCell align="center" sx={{width:'20%'}}>
                         {
                           view === "excluded" && (
                           <IconButton 
