@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Popover, Box, TextField, Button, Typography } from '@mui/material';
 
-function Survey({ title, onDismiss, onSubmit }) {
+function FeedbackSurvey({ title, onDismiss, onSubmit }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [feedback, setFeedback] = useState('');
 
@@ -74,4 +74,4 @@ function Survey({ title, onDismiss, onSubmit }) {
   );
 }
 
-export default Survey;
+export default FeedbackSurvey;

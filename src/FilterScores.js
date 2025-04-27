@@ -57,6 +57,7 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
 
   const checkProfanity = async (lyrics, whitelist) => {      
     console.log("whitelist: ", whitelist);
+    const defaultWhitelist = ['scat']
 
     const myDataset = new DataSet()
       .addAll(englishDataset)
@@ -78,7 +79,7 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
     // Set up the matcher
     const matcher = new RegExpMatcher({
       blacklistedTerms: myDataset.build().blacklistedTerms,
-      whitelistedTerms: [...whitelist, ...spanishWhitelist], 
+      whitelistedTerms: [...whitelist, ...spanishWhitelist, ...defaultWhitelist], 
       ...spanishEnglishBlacklistTransformers,
     });
 

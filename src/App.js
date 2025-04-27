@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import {Container, Typography, Button, Box} from '@mui/material';
+import {Container, Typography, Button, Box, CircularProgress} from '@mui/material';
 import Profile from './Profile';
 import StepToggle from './StepToggle';
 import ChoosePlaylist from './ChoosePlaylist';
@@ -13,12 +13,13 @@ import { setAccessToken } from './spotifyApi';
 import ReactGA from 'react-ga4';
 import posthog from 'posthog-js';
 import { usePostHog } from 'posthog-js/react'
-import Survey from './Survey';
+import FeedbackSurvey from './FeedbackSurvey';
 
 
 
 
 import FirstPageIcon from '@mui/icons-material/FirstPage';
+import OnboardingSurvey from './OnboardingSurvey';
 
 // LEFT OFF: playlist_track_number carry over for find clean versions and tracks pull from cache too
 
@@ -65,11 +66,21 @@ export default function App() {
   const [stepsStatus, setStepsStatus] = useState([false, false, false])
 
   //Google Analytics tracking:
-  const [showSurvey, setShowSurvey] = useState(true)
-  const [survey, setSurvey] = useState(null)
+  const [showFeedbackSurvey, setShowFeedbackSurvey] = useState(true)
+  const [feedbackSurvey, setFeedbackSurvey] = useState(null)
+
+  const [onboardingSurvey, setOnboardingSurvey] = useState(null)
+  const [showOnboardingSurvey, setShowOnboardingSurvey] = useState(false)
+
+  const [loadingSurveys, setLoadingSurveys] = useState(true);
+
+
 
   
   const posthog = usePostHog()
+
+  const onboardingSurveyId = "019674db-5402-0000-02e5-f606d2ef5bc1"
+  const feedbackSurveyId = '01960c65-28ec-0000-2e34-127215b80bfa'
 
 
   useEffect(() => {
@@ -83,9 +94,45 @@ export default function App() {
     }
   }, []);
 
-  const [surveyTitle, setSurveyTitle] = useState(false)
-  const surveyID = '01960c65-28ec-0000-2e34-127215b80bfa'
+  useEffect(() => {
+    if (loggedIn) {
+      // Start loading state
+      setLoadingSurveys(true);
+      
+      // Define async function properly
+      const fetchSurveys = async () => {
+        return new Promise(resolve => {
+          posthog?.getSurveys((surveys) => {
+            console.log("SURVEYS:", surveys);
+            if (surveys.length > 0) {
+              // Process onboarding survey
+              const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);             
 
+              if (onboardingSurveyObj) {
+                if (posthog.get_property('$stored_person_properties').has_completed_onboarding_survey) {
+                  setOnboardingSurvey(null);
+                } else {
+                  setShowOnboardingSurvey(true);
+                  setOnboardingSurvey(onboardingSurveyObj);
+                }      
+              }
+              
+              // Set feedback survey
+              const feedbackSurveyObj = surveys.find(s => s.id === feedbackSurveyId);
+              setFeedbackSurvey(feedbackSurveyObj);
+            }
+            
+            // Finish loading
+            setLoadingSurveys(false);
+            resolve();
+          }, true);
+        });
+      };
+      
+      // Execute the async function
+      fetchSurveys();
+    }
+  }, [posthog, loggedIn]);
 
   useEffect(() => {
     if (userId) {
@@ -93,36 +140,39 @@ export default function App() {
         posthog?.identify(userId, {
             userId: userId,
         })
-
-        posthog?.getSurveys((surveys) => {
-          console.log("SURVEYS:", surveys)
-          if (surveys.length > 0) {
-            const survey = surveys.find(s => s.id === surveyID)
-            setSurvey(survey)
-            // setSurveyTitle(survey.questions[0].question)
-          }
-        }, true)
     }
 }, [posthog, userId])
 
+const handleOnboardingSubmit = (value) => {
+  setShowOnboardingSurvey(false)
+  console.log("User submitted:", value)
+  const response = value;
+  const responseKey = `$survey_response_${onboardingSurvey.questions[0].id}`;
+  console.log(responseKey)
+  console.log(response)
+  posthog.capture("survey sent", {
+    $survey_id: onboardingSurveyId,
+    [responseKey]: response
+  })
+  posthog.capture("survey shown", {
+    $survey_id: onboardingSurveyId
+})
+posthog.people.set({
+  has_completed_onboarding_survey: true,
+});
 
 
-// const handleDismiss = () => {
-//   console.log("Survey dismissed!")
-//   posthog.capture("survey dismissed", {
-//     $survey_id: surveyID // required
-//   })
-// }
+}
 
-const handleSubmit = (value) => {
-  setShowSurvey(false)
+const handleFeedbackSurveySubmit = (value) => {
+  setShowFeedbackSurvey(false)
   console.log("User submitted:", value)
   const feedback = value;
-  const responseKey = `$survey_response_${survey.questions[0].id}`;
+  const responseKey = `$survey_response_${feedbackSurvey.questions[0].id}`;
   console.log(responseKey)
   console.log(feedback)
   posthog.capture("survey sent", {
-    $survey_id: surveyID,
+    $survey_id: feedbackSurveyId,
     [responseKey]: feedback
   })
 }
@@ -146,6 +196,12 @@ const handleSubmit = (value) => {
   const handleUserInfo = (info) => {
     console.log(info);
     setUserId(info.userId);
+
+
+    posthog.people.set({
+      userId: info.userId,
+      name: info.name,
+    });
   }
 
   // Recieving the step status of Step 1 from the Choose Playlist Component 
@@ -261,7 +317,6 @@ const handleSubmit = (value) => {
     setSavedPlaylist(id)
   }
 
-  
 
   return (
     <Container 
@@ -278,87 +333,89 @@ const handleSubmit = (value) => {
       flexDirection:'column',
       backgroundColor:'transparent'
       }}>
-
-      { !loggedIn?
-        <Login sendLoginStatus={handleLoginStatus} sendAccessToken={handleAccessToken}/>
-      :
+    
+    { !loggedIn ? (
+      <Login sendLoginStatus={handleLoginStatus} sendAccessToken={handleAccessToken}/>
+    ) : loadingSurveys ? (
+      <></>
+    ) : showOnboardingSurvey && onboardingSurvey ? (
+      // Only show Profile + Onboarding Survey if needed
+      <>
+        <Profile sendUserInfo={handleUserInfo}/>
+        <OnboardingSurvey survey={onboardingSurvey} onSubmit={handleOnboardingSubmit}/>
+      </>
+    ) : (
+      // Main app flow - only show when not in onboarding
       <>
         <Profile sendUserInfo={handleUserInfo}/>
         <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
         {
           activeStep === 0 ? 
             <ChoosePlaylist sendStatus={handleStepsStatus} sendChosenPlaylist={handleChosenPlaylist}/>
-          :
-          activeStep === 1 ?
-          <SetFilters onApplyFilters={handleApplyFilters} chosenPlaylist={chosenPlaylist} sendChosenFilters={handleChosenFilters} sendStatus={handleStepsStatus} progress={cleaningProgress}/>
-          :
-          activeStep === 2 ?
+          : activeStep === 1 ?
+            <SetFilters onApplyFilters={handleApplyFilters} chosenPlaylist={chosenPlaylist} 
+              sendChosenFilters={handleChosenFilters} sendStatus={handleStepsStatus} 
+              progress={cleaningProgress}/>
+          : activeStep === 2 ?
           <>
-            {
-              !stepsStatus[2] ? 
-                  <SaveComponent sendStatus={handleStepsStatus} cleanedPlaylist={cleanedPlaylist} chosenFilters={chosenFilters} userId={userId} sendSavedPlaylist={handleSavedPlaylist}/>
-              :
-              <>
-                <Done savedPlaylist={savedPlaylist} originalPlaylistName={chosenPlaylist.name}/>
-                <Container
+            {!stepsStatus[2] ? 
+              <SaveComponent sendStatus={handleStepsStatus} cleanedPlaylist={cleanedPlaylist} 
+                chosenFilters={chosenFilters} userId={userId} sendSavedPlaylist={handleSavedPlaylist}/>
+            :
+            <>
+              <Done savedPlaylist={savedPlaylist} originalPlaylistName={chosenPlaylist.name}/>
+              <Container
                 sx={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    '& .MuiButtonBase-root': {
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  '& .MuiButtonBase-root': {
                     borderRadius: '50px',
-                    },
-                    p:0,
-                    mt:13
+                  },
+                  p:0,
+                  mt:13
                 }}
-                >
+              >
                 <Button 
-                variant="contained" 
-                sx={{ minWidth: '170px', minHeight:'40px' }}
-                onClick={() => {
-                  console.log("Clean again");
-                  setActiveStep(0);
-                  setStepsStatus([false, false, false]);
-                  ReactGA.event({
-                    category: 'User',
-                    action: `Clean another playlist Clicked`
-                  });
-                }}
+                  variant="contained" 
+                  sx={{ minWidth: '170px', minHeight:'40px' }}
+                  onClick={() => {
+                    console.log("Clean again");
+                    setActiveStep(0);
+                    setStepsStatus([false, false, false]);
+                    ReactGA.event({
+                      category: 'User',
+                      action: `Clean another playlist Clicked`
+                    });
+                  }}
                 >
                   <FirstPageIcon/>
                   Clean Another Playlist
                 </Button>
-                </Container>
-              </> 
-  
-          }
+              </Container>
+            </> 
+            }
           </>
-          :
-          <></>
+          : <></>
         }
+        <Box 
+          sx={{
+            mt: 'auto', 
+            textAlign: 'left',
+            width: '100%',
+            display:'flex',
+            justifyContent:'space-between',
+            alignItems:'center'
+          }}
+        >
+          <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
+          <FeedbackSurvey
+            title={feedbackSurvey?.questions[0].question}
+            onSubmit={handleFeedbackSurveySubmit}
+          />
+        </Box>
       </>
-      
-    }
-    <Box 
-        sx={{
-          mt: 'auto', 
-          textAlign: 'left',
-          width: '100%',
-          display:'flex',
-          justifyContent:'space-between',
-          alignItems:'center'
-        }}
-      >
-     <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
-     {loggedIn && (
-        <Survey
-          title={survey?.questions[0].question}
-          // onDismiss={handleDismiss}
-          onSubmit={handleSubmit}
-        />
-      )}
-    </Box>
-
-  </Container>
+    )}
+    </Container>
   );
 }
