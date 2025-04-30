@@ -26,7 +26,7 @@ function FeedbackSurvey({ title, onDismiss, onSubmit }) {
 
   return (
     <div>
-      <Button aria-describedby={id} variant="contained" onClick={handleClick}>
+      <Button id="feedback-button" aria-describedby={id} variant="contained" onClick={handleClick}>
         Leave feedback
       </Button>
       <Popover

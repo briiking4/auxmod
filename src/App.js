@@ -13,7 +13,6 @@ import { setAccessToken } from './spotifyApi';
 import ReactGA from 'react-ga4';
 import posthog from 'posthog-js';
 import { usePostHog } from 'posthog-js/react'
-import FeedbackSurvey from './FeedbackSurvey';
 
 
 
@@ -66,8 +65,6 @@ export default function App() {
   const [stepsStatus, setStepsStatus] = useState([false, false, false])
 
   //Google Analytics tracking:
-  const [showFeedbackSurvey, setShowFeedbackSurvey] = useState(true)
-  const [feedbackSurvey, setFeedbackSurvey] = useState(null)
 
   const [onboardingSurvey, setOnboardingSurvey] = useState(null)
   const [showOnboardingSurvey, setShowOnboardingSurvey] = useState(false)
@@ -80,7 +77,6 @@ export default function App() {
   const posthog = usePostHog()
 
   const onboardingSurveyId = "019674db-5402-0000-02e5-f606d2ef5bc1"
-  const feedbackSurveyId = '01960c65-28ec-0000-2e34-127215b80bfa'
 
 
   useEffect(() => {
@@ -96,47 +92,34 @@ export default function App() {
 
   useEffect(() => {
     if (loggedIn) {
-      // Start loading state
       setLoadingSurveys(true);
       
-      // Define async function properly
-      const fetchSurveys = async () => {
+      const fetchOnboardingSurvey = async () => {
         return new Promise(resolve => {
-          posthog?.getSurveys((surveys) => {
-            console.log("SURVEYS:", surveys);
-            if (surveys.length > 0) {
-              // Process onboarding survey
+          posthog?.getActiveMatchingSurveys((surveys) => {
+            console.log("Active matching Surveys:", surveys);
+            if (surveys.length > 0) {         
+              // set onboarding survey
               const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);             
-
               if (onboardingSurveyObj) {
-                if (posthog.get_property('$stored_person_properties').has_completed_onboarding_survey) {
-                  setOnboardingSurvey(null);
-                } else {
-                  setShowOnboardingSurvey(true);
-                  setOnboardingSurvey(onboardingSurveyObj);
-                }      
-              }
-              
-              // Set feedback survey
-              const feedbackSurveyObj = surveys.find(s => s.id === feedbackSurveyId);
-              setFeedbackSurvey(feedbackSurveyObj);
+                setShowOnboardingSurvey(true);
+                setOnboardingSurvey(onboardingSurveyObj);
+              } else {
+                setShowOnboardingSurvey(null);
+              }                          
             }
-            
-            // Finish loading
-            setLoadingSurveys(false);
             resolve();
-          }, true);
+          });
         });
       };
-      
-      // Execute the async function
-      fetchSurveys();
+
+      fetchOnboardingSurvey();
+      setLoadingSurveys(false);
     }
   }, [posthog, loggedIn]);
 
   useEffect(() => {
     if (userId) {
-        // Identify sends an event, so you may want to limit how often you call it
         posthog?.identify(userId, {
             userId: userId,
         })
@@ -154,28 +137,14 @@ const handleOnboardingSubmit = (value) => {
     $survey_id: onboardingSurveyId,
     [responseKey]: response
   })
-  posthog.capture("survey shown", {
-    $survey_id: onboardingSurveyId
-})
-posthog.people.set({
-  has_completed_onboarding_survey: true,
-});
+  posthog.people.set({
+    has_completed_onboarding_survey: true,
+  });
 
 
 }
 
-const handleFeedbackSurveySubmit = (value) => {
-  setShowFeedbackSurvey(false)
-  console.log("User submitted:", value)
-  const feedback = value;
-  const responseKey = `$survey_response_${feedbackSurvey.questions[0].id}`;
-  console.log(responseKey)
-  console.log(feedback)
-  posthog.capture("survey sent", {
-    $survey_id: feedbackSurveyId,
-    [responseKey]: feedback
-  })
-}
+
 
   // Recieving logged in status from the Login Compt
 
@@ -409,10 +378,6 @@ const handleFeedbackSurveySubmit = (value) => {
           }}
         >
           <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
-          <FeedbackSurvey
-            title={feedbackSurvey?.questions[0].question}
-            onSubmit={handleFeedbackSurveySubmit}
-          />
         </Box>
       </>
     )}
