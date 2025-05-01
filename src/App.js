@@ -69,7 +69,7 @@ export default function App() {
   const [onboardingSurvey, setOnboardingSurvey] = useState(null)
   const [showOnboardingSurvey, setShowOnboardingSurvey] = useState(false)
 
-  const [loadingSurveys, setLoadingSurveys] = useState(false);
+  const [loadingSurveys, setLoadingSurveys] = useState(true);
 
   const [posthogUser, setPosthogUser] = useState(null);
 
@@ -134,14 +134,14 @@ export default function App() {
               const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);
               const user_onboarded = posthogUser?.properties.has_completed_onboarding_survey
               if (onboardingSurveyObj && user_onboarded) {
-                setShowOnboardingSurvey(null);
+                setShowOnboardingSurvey(false);
 
               } else {
                 setShowOnboardingSurvey(true);
                 setOnboardingSurvey(onboardingSurveyObj);
               }                          
             }else{
-              setShowOnboardingSurvey(null);
+              setShowOnboardingSurvey(false);
             }
             resolve();
           });
