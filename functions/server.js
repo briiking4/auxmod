@@ -13,7 +13,7 @@ import serverless from 'serverless-http';
 
 dotenv.config()
 
-let prod = false; 
+let prod = true; 
 
 
 var client_id = process.env.SPOTIFY_CLIENT_ID;
