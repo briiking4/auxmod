@@ -7,6 +7,8 @@ import ReactGA from 'react-ga4';
 import FilterCategory from './FilterCategory';
 import AdvancedFilters from './AdvancedFilters';
 import { filterCategories, iconMap } from './filterConfig';
+import { Helmet } from 'react-helmet';
+
 
 export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilters, progress }) {
   const [loading, setLoading] = useState(false);
@@ -110,6 +112,11 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
   const sortedCategories = [...filterCategories].sort((a, b) => a.order - b.order);
   
   return (
+    <>
+      <Helmet>
+        <title>Set Filters | auXmod</title>
+        <meta name="description" content="Customize playlist filters to block profanity, sexual content, or violence from playlist. Automatically finds clean versions and set your own word whitelist." />
+      </Helmet>
     <Container sx={{ mt: 2, p: 0 }}>
       <Box sx={{ mt: -3 }}>
         <IconButton
@@ -212,5 +219,6 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
         )}
       </Box>
     </Container>
+    </>
   );
 }

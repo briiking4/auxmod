@@ -19,6 +19,8 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 
 import ReactGA from 'react-ga4';
+import { Helmet } from 'react-helmet';
+
 
 
 export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilters, userId, sendSavedPlaylist }) {
@@ -217,6 +219,11 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
 
 
   return (
+  <>
+    <Helmet>
+      <title>Review & Save Playlist | auXmod</title>
+      <meta name="description" content="Review tracks that passed or failed your content filters - Profanity, Sexual Content, Violent Content. Save the cleaned version to your Spotify library." />
+    </Helmet>
     <Box sx={{ 
       display: 'flex',
       flexDirection: 'column',
@@ -420,5 +427,6 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
         <Typography>I'm sorry, an issue has occured. Please try again.</Typography>
       )}
     </Box>
+    </>
   );
 }
