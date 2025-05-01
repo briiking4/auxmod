@@ -106,7 +106,6 @@ function generateRandomString(length){
 
 async function getPosthogUser(userId) {
   const projectId = '144587';
-  console.log("USER ID IN FUNCTION", userId)
   try {
     const response = await fetch(`https://us.posthog.com/api/projects/${projectId}/persons/?search=${userId}`, {
       method: 'GET',
@@ -130,7 +129,6 @@ async function getPosthogUser(userId) {
 
 app.post('/api/getPosthogUser', async (req, res) => {
   const { userId } = req.body;
-  console.log("USER ID", userId)
 
 
   if (!userId) {

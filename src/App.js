@@ -111,6 +111,7 @@ export default function App() {
   };
 
   useEffect(() => {
+    console.log("userId changed",userId)
     if (userId) {
       const fetchPosthogUser = async () => {
         const user = await getPosthogUser(userId);
@@ -118,12 +119,13 @@ export default function App() {
       };
       fetchPosthogUser();
     }
-  }, [posthog, userId]);
+  }, [userId]);
   
   
 
   useEffect(() => {
-    if (loggedIn && posthogUser) {
+    console.log("Posthog user changed", posthogUser)
+    if (posthogUser) {
       console.log("Posthog user", posthogUser)
       const fetchOnboardingSurvey = async () => {
         return new Promise(resolve => {
@@ -143,15 +145,14 @@ export default function App() {
             }else{
               setShowOnboardingSurvey(false);
             }
+            setLoadingSurveys(false);
             resolve();
           });
         });
       };
-
       fetchOnboardingSurvey();
-      setLoadingSurveys(false);
     }
-  }, [posthog, loggedIn, userId, posthogUser]);
+  }, [posthogUser]);
 
 
 const handleOnboardingSubmit = (value) => {
@@ -332,80 +333,81 @@ const handleOnboardingSubmit = (value) => {
     
     { !loggedIn ? (
       <Login sendLoginStatus={handleLoginStatus} sendAccessToken={handleAccessToken}/>
-    ) : loadingSurveys ? (
-      <></>
-    ) : showOnboardingSurvey && onboardingSurvey ? (
-      // Only show Profile + Onboarding Survey if needed
-      <>
-        <Profile sendUserInfo={handleUserInfo}/>
-        <OnboardingSurvey survey={onboardingSurvey} onSubmit={handleOnboardingSubmit}/>
-      </>
     ) : (
-      // Main app flow - only show when not in onboarding
       <>
         <Profile sendUserInfo={handleUserInfo}/>
-        <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
-        {
-          activeStep === 0 ? 
-            <ChoosePlaylist sendStatus={handleStepsStatus} sendChosenPlaylist={handleChosenPlaylist}/>
-          : activeStep === 1 ?
-            <SetFilters onApplyFilters={handleApplyFilters} chosenPlaylist={chosenPlaylist} 
-              sendChosenFilters={handleChosenFilters} sendStatus={handleStepsStatus} 
-              progress={cleaningProgress}/>
-          : activeStep === 2 ?
+        
+        {loadingSurveys ? (
+          <CircularProgress sx={{margin:'auto'}} /> 
+        ) : showOnboardingSurvey && onboardingSurvey ? (
+          <OnboardingSurvey survey={onboardingSurvey} onSubmit={handleOnboardingSubmit}/>
+        ) : (
+          // Main app flow components (Profile is already visible above)
           <>
-            {!stepsStatus[2] ? 
-              <SaveComponent sendStatus={handleStepsStatus} cleanedPlaylist={cleanedPlaylist} 
-                chosenFilters={chosenFilters} userId={userId} sendSavedPlaylist={handleSavedPlaylist}/>
-            :
-            <>
-              <Done savedPlaylist={savedPlaylist} originalPlaylistName={chosenPlaylist.name}/>
-              <Container
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  '& .MuiButtonBase-root': {
-                    borderRadius: '50px',
-                  },
-                  p:0,
-                  mt:13
-                }}
-              >
-                <Button 
-                  variant="contained" 
-                  sx={{ minWidth: '170px', minHeight:'40px' }}
-                  onClick={() => {
-                    console.log("Clean again");
-                    setActiveStep(0);
-                    setStepsStatus([false, false, false]);
-                    ReactGA.event({
-                      category: 'User',
-                      action: `Clean another playlist Clicked`
-                    });
-                  }}
-                >
-                  <FirstPageIcon/>
-                  Clean Another Playlist
-                </Button>
-              </Container>
-            </> 
+            <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
+            {
+              activeStep === 0 ? 
+                <ChoosePlaylist sendStatus={handleStepsStatus} sendChosenPlaylist={handleChosenPlaylist}/>
+              : activeStep === 1 ?
+                <SetFilters onApplyFilters={handleApplyFilters} chosenPlaylist={chosenPlaylist} 
+                  sendChosenFilters={handleChosenFilters} sendStatus={handleStepsStatus} 
+                  progress={cleaningProgress}/>
+              : activeStep === 2 ?
+              <>
+                {!stepsStatus[2] ? 
+                  <SaveComponent sendStatus={handleStepsStatus} cleanedPlaylist={cleanedPlaylist} 
+                    chosenFilters={chosenFilters} userId={userId} sendSavedPlaylist={handleSavedPlaylist}/>
+                :
+                <>
+                  <Done savedPlaylist={savedPlaylist} originalPlaylistName={chosenPlaylist.name}/>
+                  <Container
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      '& .MuiButtonBase-root': {
+                        borderRadius: '50px',
+                      },
+                      p:0,
+                      mt:13
+                    }}
+                  >
+                    <Button 
+                      variant="contained" 
+                      sx={{ minWidth: '170px', minHeight:'40px' }}
+                      onClick={() => {
+                        console.log("Clean again");
+                        setActiveStep(0);
+                        setStepsStatus([false, false, false]);
+                        ReactGA.event({
+                          category: 'User',
+                          action: `Clean another playlist Clicked`
+                        });
+                      }}
+                    >
+                      <FirstPageIcon/>
+                      Clean Another Playlist
+                    </Button>
+                  </Container>
+                </> 
+                }
+              </>
+              : <></>
             }
+            <Box 
+              sx={{
+                mt: 'auto', 
+                textAlign: 'left',
+                width: '100%',
+                display:'flex',
+                justifyContent:'space-between',
+                alignItems:'center'
+              }}
+            >
+              <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
+            </Box>
           </>
-          : <></>
-        }
-        <Box 
-          sx={{
-            mt: 'auto', 
-            textAlign: 'left',
-            width: '100%',
-            display:'flex',
-            justifyContent:'space-between',
-            alignItems:'center'
-          }}
-        >
-          <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
-        </Box>
+        )}
       </>
     )}
     </Container>
