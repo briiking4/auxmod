@@ -13,7 +13,7 @@ import serverless from 'serverless-http';
 
 dotenv.config()
 
-let prod = true; 
+let prod = false; 
 
 
 var client_id = process.env.SPOTIFY_CLIENT_ID;
@@ -102,6 +102,47 @@ function generateRandomString(length){
     console.error('Error exchanging code for token:', error);
     res.redirect('/#error=invalid_token');
   }
+});
+
+async function getPosthogUser(userId) {
+  const projectId = '144587';
+  console.log("USER ID IN FUNCTION", userId)
+  try {
+    const response = await fetch(`https://us.posthog.com/api/projects/${projectId}/persons/?search=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.POSTHOG_PERSONAL_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (err) {
+    console.error('Error fetching PostHog user:', err);
+    return null;
+  }
+}
+
+app.post('/api/getPosthogUser', async (req, res) => {
+  const { userId } = req.body;
+  console.log("USER ID", userId)
+
+
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing userId in request body' });
+  }
+  const userData = await getPosthogUser(userId);
+
+  if (!userData) {
+    return res.status(500).json({ error: 'Failed to retrieve user data' });
+  }
+
+  res.json(userData);
 });
 
 

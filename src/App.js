@@ -53,7 +53,7 @@ export default function App() {
 
   const [savedPlaylist, setSavedPlaylist] = useState(null)
 
-  const [userId, setUserId] = useState(null); // Assume this is fetched on login
+  const [userId, setUserId] = useState(null); 
 
 
 
@@ -69,7 +69,9 @@ export default function App() {
   const [onboardingSurvey, setOnboardingSurvey] = useState(null)
   const [showOnboardingSurvey, setShowOnboardingSurvey] = useState(false)
 
-  const [loadingSurveys, setLoadingSurveys] = useState(true);
+  const [loadingSurveys, setLoadingSurveys] = useState(false);
+
+  const [posthogUser, setPosthogUser] = useState(null);
 
 
 
@@ -81,7 +83,6 @@ export default function App() {
 
   useEffect(() => {
     ReactGA.initialize('G-VKQ70YNR1N', { testMode: process.env.NODE_ENV !== 'production' });
-
     if(loggedIn){
       ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Main App - User logged in" });
       ReactGA.set({
@@ -90,23 +91,57 @@ export default function App() {
     }
   }, []);
 
+  const getPosthogUser = async (userId) => {
+    console.log("userId", userId)
+    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/getPosthogUser`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+  
+    if (!res.ok) {
+      console.error('Failed to fetch user from backend');
+      return null;
+    }
+  
+    const data = await res.json();
+    return data;
+  };
+
   useEffect(() => {
-    if (loggedIn) {
-      setLoadingSurveys(true);
-      
+    if (userId) {
+      const fetchPosthogUser = async () => {
+        const user = await getPosthogUser(userId);
+        setPosthogUser(user.results[0])
+      };
+      fetchPosthogUser();
+    }
+  }, [posthog, userId]);
+  
+  
+
+  useEffect(() => {
+    if (loggedIn && posthogUser) {
+      console.log("Posthog user", posthogUser)
       const fetchOnboardingSurvey = async () => {
         return new Promise(resolve => {
           posthog?.getActiveMatchingSurveys((surveys) => {
             console.log("Active matching Surveys:", surveys);
             if (surveys.length > 0) {         
               // set onboarding survey
-              const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);             
-              if (onboardingSurveyObj) {
+              const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);
+              const user_onboarded = posthogUser?.properties.has_completed_onboarding_survey
+              if (onboardingSurveyObj && user_onboarded) {
+                setShowOnboardingSurvey(null);
+
+              } else {
                 setShowOnboardingSurvey(true);
                 setOnboardingSurvey(onboardingSurveyObj);
-              } else {
-                setShowOnboardingSurvey(null);
               }                          
+            }else{
+              setShowOnboardingSurvey(null);
             }
             resolve();
           });
@@ -116,15 +151,8 @@ export default function App() {
       fetchOnboardingSurvey();
       setLoadingSurveys(false);
     }
-  }, [posthog, loggedIn]);
+  }, [posthog, loggedIn, userId, posthogUser]);
 
-  useEffect(() => {
-    if (userId) {
-        posthog?.identify(userId, {
-            userId: userId,
-        })
-    }
-}, [posthog, userId])
 
 const handleOnboardingSubmit = (value) => {
   setShowOnboardingSurvey(false)
@@ -135,15 +163,13 @@ const handleOnboardingSubmit = (value) => {
   console.log(response)
   posthog.capture("survey sent", {
     $survey_id: onboardingSurveyId,
-    [responseKey]: response
+    [responseKey]: response,
+    $set: {
+      has_completed_onboarding_survey: true,
+    }
   })
-  posthog.people.set({
-    has_completed_onboarding_survey: true,
-  });
-
 
 }
-
 
 
   // Recieving logged in status from the Login Compt
@@ -166,11 +192,12 @@ const handleOnboardingSubmit = (value) => {
     console.log(info);
     setUserId(info.userId);
 
+    posthog.reset(); // clear anon ID and person properties
 
-    posthog.people.set({
+    posthog?.identify(info.userId, {
       userId: info.userId,
-      name: info.name,
-    });
+      name: info.name
+    })
   }
 
   // Recieving the step status of Step 1 from the Choose Playlist Component 
