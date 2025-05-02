@@ -131,11 +131,11 @@ export default function App() {
         return new Promise(resolve => {
           posthog?.getActiveMatchingSurveys((surveys) => {
             console.log("Active matching Surveys:", surveys);
-            if (surveys.length > 0) {         
+            const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);
+            if (onboardingSurveyObj) {         
               // set onboarding survey
-              const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);
               const user_onboarded = posthogUser?.properties.has_completed_onboarding_survey
-              if (onboardingSurveyObj && user_onboarded) {
+              if (user_onboarded) {
                 setShowOnboardingSurvey(false);
 
               } else {
