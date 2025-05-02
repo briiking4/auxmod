@@ -71,7 +71,7 @@ export default function App() {
 
   const [loadingSurveys, setLoadingSurveys] = useState(true);
 
-  const [posthogUser, setPosthogUser] = useState(null);
+  const [posthogUser, setPosthogUser] = useState(undefined);
 
 
 
@@ -111,47 +111,50 @@ export default function App() {
   };
 
   useEffect(() => {
-    console.log("userId changed",userId)
+    console.log("userId changed", userId)
     if (userId) {
-      const fetchPosthogUser = async () => {
-        const user = await getPosthogUser(userId);
-        setPosthogUser(user.results[0])
-      };
-      fetchPosthogUser();
+        const fetchPosthogUser = async () => {
+          const user = await getPosthogUser(userId);
+          if(user.results[0]){
+            setPosthogUser(user.results[0])
+          }else{
+            setPosthogUser(null)
+          }
+        };
+        fetchPosthogUser();
     }
   }, [userId]);
-  
   
 
   useEffect(() => {
     console.log("Posthog user changed", posthogUser)
-    if (posthogUser) {
-      console.log("Posthog user", posthogUser)
-      const fetchOnboardingSurvey = async () => {
-        return new Promise(resolve => {
-          posthog?.getActiveMatchingSurveys((surveys) => {
-            console.log("Active matching Surveys:", surveys);
-            const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);
-            if (onboardingSurveyObj) {         
-              // set onboarding survey
-              const user_onboarded = posthogUser?.properties.has_completed_onboarding_survey
-              if (user_onboarded) {
-                setShowOnboardingSurvey(false);
+    if (posthogUser === undefined) return;
 
-              } else {
-                setShowOnboardingSurvey(true);
-                setOnboardingSurvey(onboardingSurveyObj);
-              }                          
-            }else{
+    console.log("Posthog user", posthogUser)
+    const fetchOnboardingSurvey = async () => {
+      return new Promise(resolve => {
+        posthog?.getActiveMatchingSurveys((surveys) => {
+          console.log("Active matching Surveys:", surveys);
+          const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);
+          if (onboardingSurveyObj) {         
+            // set onboarding survey
+            const user_onboarded = posthogUser?.properties.has_completed_onboarding_survey
+            if (user_onboarded) {
               setShowOnboardingSurvey(false);
-            }
-            setLoadingSurveys(false);
-            resolve();
-          });
+
+            } else {
+              setShowOnboardingSurvey(true);
+              setOnboardingSurvey(onboardingSurveyObj);
+            }                          
+          }else{
+            setShowOnboardingSurvey(false);
+          }
+          setLoadingSurveys(false);
+          resolve();
         });
-      };
+      });
+    };
       fetchOnboardingSurvey();
-    }
   }, [posthogUser]);
 
 
@@ -189,16 +192,37 @@ const handleOnboardingSubmit = (value) => {
 
   // Recieving the userId
 
+
   const handleUserInfo = (info) => {
     console.log(info);
-    setUserId(info.userId);
-
     posthog.reset(); // clear anon ID and person properties
 
     posthog?.identify(info.userId, {
       userId: info.userId,
       name: info.name
     })
+
+    setUserId(info.userId)
+
+      
+
+    // Check if identification worked correctly
+    // const currentDistinctId = posthog.get_distinct_id();
+    
+    // if (currentDistinctId === info.userId) {
+    //   console.log("Identify worked!")
+    //   setUserId(info.userId);
+    // } else {
+    //   // If not immediately successful, wait a bit and check again
+    //   setTimeout(() => {
+    //     const retryDistinctId = posthog.get_distinct_id();
+    //     if (retryDistinctId === info.userId) {
+    //       setUserId(info.userId);
+    //     } else {
+    //       console.error("PostHog identification failed after retry");
+    //     }
+    //   }, 500);
+    // }
   }
 
   // Recieving the step status of Step 1 from the Choose Playlist Component 

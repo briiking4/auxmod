@@ -107,7 +107,7 @@ function generateRandomString(length){
 async function getPosthogUser(userId) {
   const projectId = '144587';
   try {
-    const response = await fetch(`https://us.posthog.com/api/projects/${projectId}/persons/?search=${userId}`, {
+    const response = await fetch(`https://us.posthog.com/api/projects/${projectId}/persons/?distinct_id=${userId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${process.env.POSTHOG_PERSONAL_KEY}`,
