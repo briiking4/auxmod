@@ -183,7 +183,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           let localItemName = item.name
 
         // strip out the track name if it includes a "-"
-        if (item.name.includes("-")) {
+        if (item.name.includes("-") && !item.name.includes("- Remix")) {
           localItemName = item.name.substring(0, item.name.indexOf("-")).trim();
         } else {
           localItemName = item.name;

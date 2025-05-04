@@ -70,7 +70,7 @@ export default function StepToggle({stepsStatus, activeStep}) {
         container
         justifyContent="space-between"
         alignItems="center"
-        sx={{ pt: '10px', height: '150px', position: 'relative' }}
+        sx={{ pt: '10px', pb:'20px', position: 'relative' }}
       >
         {steps.map((step, index) => (
           <React.Fragment key={index}>

@@ -1,9 +1,12 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { Button, Box, Typography, IconButton, Snackbar} from '@mui/material';
+import { Button, Box, Typography, IconButton, Snackbar, Alert} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PreviewPlaylist from './PreviewPlaylist';
 import spotifyApi from './spotifyApi';
+
+
+
 import ProfanityIcon from './ProfanityIcon';
 import ViolenceIcon from './ViolenceIcon';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
@@ -17,6 +20,8 @@ import MusicOffIcon from '@mui/icons-material/MusicOff';
 import SoapIcon from '@mui/icons-material/Soap';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+
 
 import ReactGA from 'react-ga4';
 import { Helmet } from 'react-helmet';
@@ -242,7 +247,16 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
           <ArrowBackIcon fontSize="inherit" />
         </IconButton>
 
-        <Typography variant="h6">{cleanedPlaylist?.name}</Typography>
+        <Box sx={{display:'flex', flexDirection:'row', alignItems:'center'}}>
+          <Typography variant="h6">{cleanedPlaylist?.name} </Typography>
+
+          <FiberManualRecordIcon sx={{fontSize:'10px', mx:1}}/>
+
+          <Typography variant="caption">
+            {(localCleanedPlaylist?.tracksAdded.length) + " songs"}
+          </Typography>
+
+        </Box>
         <Typography variant="caption">Filters: {chosenFilters.join(', ')}</Typography>
 
       </Box>
@@ -276,7 +290,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               }}
               onClick={() => setView('included')}
             >
-              Review & Save Playlist
+              Review & Save ({localCleanedPlaylist.tracksAdded.length})
             </Button>
             <Button
               sx={{
@@ -287,13 +301,14 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               }}
               onClick={() => setView('excluded')}
             >
-              Review Removed Songs
+              View Removed ({localCleanedPlaylist.excludedTracks.length})
             </Button>
           </Box>
 
+
             {/* Filter Message */}
-            <Box sx={{ mb: 2, flexShrink: 0, textAlign:'center'}}>
-              <Typography variant="caption">
+            <Box sx={{ mb: 1, flexShrink: 0, textAlign:'center'}}>
+              {/* <Typography variant="caption">
                 {view === 'included'
                   ? displayedTracks.length > 0
                     ? chosenFilters.includes('Profanity')
@@ -309,64 +324,74 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                     : chosenFilters.includes('Profanity')
                       ? 'All tracks either passed filter(s) or a clean version replacement was found!'
                       : 'All tracks passed the filter(s)!'}
-              </Typography>
+              </Typography> */}
               {/* Table Reason Ledgend */}
               {
                 view === 'excluded' && (
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'center', 
-                      alignItems: 'center', 
-                      flexWrap: 'wrap', 
-                      gap: 1, 
-                      px: 2
-                    }}
-                  >
-                    {[
-                      { icon: <ProfanityIcon />, label: 'Profanity' },
-                      { icon: <ViolenceIcon />, label: 'Violence' },
-                      { icon: <LocalFireDepartmentIcon />, label: 'Sexual' },
-                    ]
-                    .filter(item => chosenFilters.includes(item.label)) // Show only chosen filters
-                    .concat([{ icon: <MusicOffIcon />, label: 'No lyrics' },{ icon: <ErrorIcon />, label: 'Error' } ]) // Always include this
-                    .map((item, index) => (
-                      <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
-                        <IconButton size="small" disabled>
-                          {item.icon}
-                        </IconButton>
-                        <Typography variant="caption">{item.label}</Typography>
-                      </Box>
-                    ))}
-                  </Box>
+                  <>
+                    <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>No clean version found if profanity is the only issue. Add songs back in you'd include — and drop feedback below!</Alert>
+
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        flexWrap: 'wrap', 
+                        gap: 1, 
+                        px: 2,
+                      }}
+                    >
+                      {[
+                        { icon: <ProfanityIcon />, label: 'Profanity' },
+                        { icon: <ViolenceIcon />, label: 'Violence' },
+                        { icon: <LocalFireDepartmentIcon />, label: 'Sexual' },
+                      ]
+                      .filter(item => chosenFilters.includes(item.label)) // Show only chosen filters
+                      .concat([{ icon: <MusicOffIcon />, label: 'No lyrics' },{ icon: <ErrorIcon />, label: 'Error' } ]) // Always include this
+                      .map((item, index) => (
+                        <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
+                          <IconButton size="small" disabled>
+                            {item.icon}
+                          </IconButton>
+                          <Typography variant="caption">{item.label}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </>
                 )
               }
               {
                 view === 'included' && (
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'center', 
-                      alignItems: 'center', 
-                      flexWrap: 'wrap', 
-                      gap: 1, 
-                      px: 2
-                    }}
-                  >
-                    {[
-                      { icon: <VerifiedIcon />, label: 'Passed filters' },
-                      { icon: <SoapIcon sx={{ transform: 'translateY(-2px)' }} />, label: 'Clean version' },
-                      { icon: <FactCheckIcon />, label: 'Has allowed word(s)' },
-                    ]
-                    .map((item, index) => (
-                      <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
-                        <IconButton size="small" disabled>
-                          {item.icon}
-                        </IconButton>
-                        <Typography variant="caption">{item.label}</Typography>
-                      </Box>
-                    ))}
-                  </Box>
+                  <>
+                   <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}> See an E tag? Don’t worry — I screened the lyrics. Remove anything you’d leave out, and drop feedback below!</Alert>
+
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        flexWrap: 'wrap', 
+                        gap: 1, 
+                        pt:1,
+
+                      }}
+                    >
+                      {[
+                        { icon: <VerifiedIcon />, label: 'Passed filters' },
+                        { icon: <SoapIcon sx={{ transform: 'translateY(-2px)' }} />, label: 'Clean version' },
+                        { icon: <FactCheckIcon />, label: 'Has allowed word(s)' },
+                      ]
+                      .map((item, index) => (
+                        <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
+                          <IconButton size="small" disabled>
+                            {item.icon}
+                          </IconButton>
+                          <Typography variant="caption">{item.label}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </>
+
                 )
               }
 

@@ -131,21 +131,17 @@ export default function App() {
     if (posthogUser === undefined) return;
 
     console.log("Posthog user", posthogUser)
+    const user_onboarded = posthogUser?.properties.has_completed_onboarding_survey
     const fetchOnboardingSurvey = async () => {
       return new Promise(resolve => {
         posthog?.getActiveMatchingSurveys((surveys) => {
           console.log("Active matching Surveys:", surveys);
           const onboardingSurveyObj = surveys.find(s => s.id === onboardingSurveyId);
           if (onboardingSurveyObj) {         
-            // set onboarding survey
-            const user_onboarded = posthogUser?.properties.has_completed_onboarding_survey
-            if (user_onboarded) {
-              setShowOnboardingSurvey(false);
-
-            } else {
+            // set onboarding survey=
               setShowOnboardingSurvey(true);
               setOnboardingSurvey(onboardingSurveyObj);
-            }                          
+                     
           }else{
             setShowOnboardingSurvey(false);
           }
@@ -154,7 +150,12 @@ export default function App() {
         });
       });
     };
+    if(user_onboarded === false){
       fetchOnboardingSurvey();
+    }else{
+      setShowOnboardingSurvey(false);
+      setLoadingSurveys(false);
+    }
   }, [posthogUser]);
 
 
@@ -429,6 +430,12 @@ const handleOnboardingSubmit = (value) => {
               }}
             >
               <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
+             <Box >
+              <Button id="feedback-button" variant="contained" size="small">
+                Leave feedback
+              </Button>
+              
+             </Box>
             </Box>
           </>
         )}

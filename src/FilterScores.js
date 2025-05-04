@@ -80,7 +80,7 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
     const matcher = new RegExpMatcher({
       blacklistedTerms: myDataset.build().blacklistedTerms,
       whitelistedTerms: [...whitelist, ...spanishWhitelist, ...defaultWhitelist], 
-      ...spanishEnglishBlacklistTransformers,
+      blacklistMatcherTransformers: spanishEnglishBlacklistTransformers,
     });
 
 

@@ -233,10 +233,21 @@ useEffect(() => {
           >
             <TableBody>
               {tracks.map((track) => (
-                <TableRow hover role="checkbox" tabIndex={-1} key={track.id} onClick={() => handlePlayPause(track)}>
+                <TableRow hover role="checkbox" tabIndex={-1} key={track.id}>
                   {/* Tracks data */}
                   <TableCell>
                     <Box sx={{overflow:'hidden', display:'flex', gap:0.8}}>
+                      <IconButton
+                        onClick={() => handlePlayPause(track)}
+                        aria-label={playingTrackId === track.id ? "Pause" : "Play"}
+                      >
+                        {playingTrackId === track.id ? (
+                          <PauseIcon />
+                        ) : (
+                          <PlayArrowIcon />
+                        )}
+                      </IconButton>
+                      
                       <img
                         width="50px"
                         height="50px"
@@ -392,21 +403,7 @@ useEffect(() => {
                       </TableCell>
                     </>
                   )}
-                    
-                  {(view === 'preview') && 
-                    <TableCell size="small" sx={{textAlign:'right'}}>
-                      <IconButton
-                        onClick={() => handlePlayPause(track)}
-                        aria-label={playingTrackId === track.id ? "Pause" : "Play"}
-                      >
-                        {playingTrackId === track.id ? (
-                          <PauseIcon />
-                        ) : (
-                          <PlayArrowIcon />
-                        )}
-                      </IconButton>
-                    </TableCell>
-                  }
+                  
                 </TableRow>
               ))}
             </TableBody>

@@ -170,11 +170,10 @@ export const spanishDataset = new DataSet()
 
 ////
   export function createSimpleTransformer(fn) {
-	return {
-		transform: fn,
-		reset() {
-		},
-	};
+    return {
+      type:0,
+      transform: fn
+    };
   }
 ///
 
