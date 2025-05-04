@@ -159,10 +159,25 @@ useEffect(() => {
     );
   }
 
-  if (!tracks || tracks.length === 0) {
+  if ((!tracks || tracks.length === 0) && view === 'preview') {
     return (
       <Typography variant="body2" sx={{ mt: 2, textAlign: "center" }}>
         No tracks available.
+      </Typography>
+    );
+  }
+
+
+  if ((!tracks || tracks.length === 0) && view === 'excluded') {
+    return (
+      <Typography variant="body2" sx={{ mt: 2, textAlign: "center" }}>
+        All tracks passed the filters!
+      </Typography>
+    );
+  }else if((!tracks || tracks.length === 0) && view === 'included'){
+    return (
+      <Typography variant="body2" sx={{ mt: 2, textAlign: "center" }}>
+        No tracks passed the filters
       </Typography>
     );
   }

@@ -329,7 +329,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               {
                 view === 'excluded' && (
                   <>
-                    <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>No clean version found if profanity is the only issue. Add songs back in you'd include — and drop feedback below!</Alert>
+                    <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>No clean version was found if profanity is the only issue. Add songs back in you'd include — and drop feedback below!</Alert>
 
                     <Box 
                       sx={{ 
@@ -338,7 +338,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                         alignItems: 'center', 
                         flexWrap: 'wrap', 
                         gap: 1, 
-                        px: 2,
+                        pt: 1,
                       }}
                     >
                       {[
