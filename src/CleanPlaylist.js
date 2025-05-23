@@ -358,7 +358,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
             const itemArtists = item.artists.map(a => a.name.toLowerCase());
             const isClean = !item.explicit;
             const isSameArtist = itemArtists.includes(artist);
-            const isTitleClean = itemName.includes("clean") || itemName.includes("radio version") || itemName.includes("radio edit")  ;
+            const isTitleClean = itemName.includes("clean") || itemName.includes("radio version") || itemName.includes("radio edit") || itemName.includes("radio mix")  ;
             const isExactNameMatch = itemName === name;
         
             return isClean && isSameArtist && (isExactNameMatch || isTitleClean);
