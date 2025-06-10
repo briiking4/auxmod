@@ -222,13 +222,15 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
               animationFillMode: 'forwards'
             }}
           >
-            <Button 
+            <Typography>auXmod is currently under construction. Please check back on 6/20/2025!</Typography>
+
+            {/* <Button 
               variant="contained" 
               sx={{ minWidth: '102px', minHeight: '42px' }}
               href={`${process.env.REACT_APP_BACKEND_URL}/login`}    
             >
               Login with Spotify
-            </Button>
+            </Button> */}
           </Container>
         </>
       )}
