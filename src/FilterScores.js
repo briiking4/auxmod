@@ -34,6 +34,9 @@ const FilterScores = async (songTitle, songArtist, chosenFilters) => {
     
         const response = await fetchWithTimeout(url, {
           method: 'GET',
+          headers: {
+            'Access-Control-Allow-Origin': '*'
+          },
         });
         
         if (!response.ok) {
