@@ -41,7 +41,7 @@
     "react-scripts": "latest",
     "serverless-http": "^3.2.0",
     "spotify-web-api-js": "^1.5.2",
-    "tiktoken": "^1.0.21"
+    "tiktoken": "^1.0.22"
   },
   "browserslist": {
     "production": [
