@@ -18,12 +18,12 @@ import {
 import { spanishDataset, spanishEnglishBlacklistTransformers } from '../src/spanishDataset.js';
 import Genius from 'genius-lyrics';
 import PQueue from 'p-queue';
-import { encoding_for_model } from 'tiktoken';
+import { encode } from 'gpt-3-encoder';
 
 
 dotenv.config()
 
-let prod = true; 
+let prod = false; 
 
 
 var client_id = process.env.SPOTIFY_CLIENT_ID;
@@ -443,10 +443,8 @@ function waitForTokens(tokensNeeded) {
 setInterval(refillTokens, REFILL_INTERVAL_MS);
 
 function estimateTokens(text) {
-  const enc = encoding_for_model("gpt-4");
-  const tokens = enc.encode(text).length;
-  enc.free();
-  return tokens;
+  const tokens = encode(text);
+  return tokens.length;
 }
 
 async function retry(func, maxRetries = 3) {

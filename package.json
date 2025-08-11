@@ -26,6 +26,7 @@
     "exponential-backoff": "^3.1.2",
     "express": "^4.21.2",
     "genius-lyrics": "^4.4.7",
+    "gpt-3-encoder": "^1.1.4",
     "obscenity": "^0.4.3",
     "openai": "^4.86.1",
     "p-limit": "^6.2.0",
