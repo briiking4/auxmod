@@ -3,6 +3,12 @@
   functions = "functions"
   publish = "build"
 
+[[headers]]
+for = "*.wasm"
+[headers.values]
+Content-Type = "application/wasm"
+
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/server"
