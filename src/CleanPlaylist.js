@@ -1,8 +1,9 @@
 import pLimit from 'p-limit';
 import { backOff } from 'exponential-backoff';
 import spotifyApi from './spotifyApi';
-import FilterScores from './FilterScores.js';
+import AnalyzeSong from './AnalyzeSong.js';
 import ReactGA from 'react-ga4';
+import AnalyzeSongsBatch from './AnalyzeSongsBatch.js'
 
 // rate-limited API wrapper
 const rateLimitedApi = {
@@ -27,10 +28,12 @@ const rateLimitedApi = {
   }
 };
 
+// Add delay between API calls to respect rate limits
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   console.log("CLEAN PLAYLIST COMP: The user and playlist id's are:", playlistId);
   console.log("CLEAN P COMP: Chosen filters - ", chosenFilters);
-  // left off here, I have loud as a chosen filter so now have to add it to logic
 
   let playlistName = '';
   let totalTrackCount = 0;
@@ -83,7 +86,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
 
   const getPlaylistTracks = async (id) => {
     try {
-      // Get playlist metadata first
       const response = await rateLimitedApi.call(spotifyApi.getPlaylist.bind(spotifyApi), id);
       playlistName = response.name;
       
@@ -92,34 +94,27 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       allTracks = allTracks.concat(items.filter(isValidTrack));
       
       totalTrackCount = response.tracks.total;
+      onProgressUpdate(2);
       
-      // Set initial progress
-      onProgressUpdate(2); // Start with 2% for getting initial playlist data
-      
-      // If we got all tracks in the first request, go straight to 10%
       if (!next) {
         onProgressUpdate(10);
         return allTracks;
       }
       
-      // Calculate how many pages we'll need to fetch
       const fetchedSoFar = allTracks.length;
       const remainingTracks = totalTrackCount - fetchedSoFar;
       const expectedPages = Math.ceil(remainingTracks / 100);
       
-      // Calculate progress increment per page
       const progressStart = 2;
       const progressEnd = 10;
       const progressPerPage = (progressEnd - progressStart) / (expectedPages + 1);
       let currentProgress = progressStart;
       
-      // Update progress after initial batch
       currentProgress += progressPerPage;
       onProgressUpdate(Math.round(currentProgress));
       
       let pagesFetched = 0;
       
-      // Fetch remaining tracks in batches
       while (next) {
         const pagedResponse = await rateLimitedApi.call(
           spotifyApi.getPlaylistTracks.bind(spotifyApi), 
@@ -131,14 +126,12 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         allTracks = allTracks.concat(validTracks);
         next = pagedResponse.next;
         
-        // Update progress after each page
         pagesFetched++;
         currentProgress = progressStart + ((pagesFetched + 1) * progressPerPage);
         onProgressUpdate(Math.round(Math.min(currentProgress, progressEnd)));
       }
       
       onProgressUpdate(progressEnd);
-      
       return allTracks;
     } catch (error) {
       console.error("Error fetching playlist data:", error);
@@ -146,174 +139,187 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     }
   };
 
-  // Score tracks 
+
   const analyzeTracksData = async (tracks) => {
-    onProgressUpdate(11); // start of analysis phase
-    
+    onProgressUpdate(11);
+  
+    const CHUNK_SIZE = 1;
+    const CHUNK_CONCURRENCY = 1;
+    const limit = pLimit(CHUNK_CONCURRENCY);
+  
     const results = {
       explicitTracks: [],
       cleanTracks: [],
       tracksNeedingCleanSearch: []
     };
-    
-    const batchSize = 25; 
-    const batches = [];
-    
-    for (let i = 0; i < tracks.length; i += batchSize) {
-      batches.push(tracks.slice(i, i + batchSize));
-    }
-
-    const totalBatches = batches.length;
-    let completedBatches = 0;
-    const progressStart = 15; 
-    const progressEnd = 50;   
-    
-    // Update at beginning of analysis phase
-    onProgressUpdate(progressStart);
-        
-    for (const batch of batches) {
-      const limit = pLimit(20); 
-      
-      const tasks = batch.map((trackItem, index) => limit(async () => {
-        try {
-          const item = trackItem.track;
-
-          item.playlist_track_number = tracks.indexOf(trackItem);
-
-          let localItemName = item.name
-
-        // strip out the track name if it includes a "-"
-        if (item.name.includes("-") && !item.name.includes("- Remix")) {
-          localItemName = item.name.substring(0, item.name.indexOf("-")).trim();
-        } else {
-          localItemName = item.name;
-        }
-
-          // Score the track
-          item.score = await FilterScores(localItemName, item.artists[0].name, chosenFilters);
-          item.reason = [];
-          let failedFilter = false;
-            
-          if (item.score && item.score.status === 'success') {
-            if ((chosenFilters.find(filter => filter.id === "profanity")) && (item.score.profanity.hasProfanity)) {
-              item.reason.push("Profanity");
-              failedFilter = true;
-            }
-            if ((chosenFilters.find(filter => filter.id === "violence")) && item.score.violence > 0.428) {
-              item.reason.push("Violence");
-              failedFilter = true;
-            }
-            if ((chosenFilters.find(filter => filter.id === "sexual")) && item.score.sexually_explicit > 0.50) {
-              item.reason.push("Sexual");
-              failedFilter = true;
-            }
-          } else {
-         // Handle failed status
-            if(item.score && item.score.status === 'failed'){
-              item.reason.push("Error");
-              return { type: 'explicit', track: item }; // mark it for exclusion
-            } else {
-              item.reason.push("No score");
-              failedFilter = true;
-            }
+  
+    const totalChunks = Math.ceil(tracks.length / CHUNK_SIZE);
+    let completedChunks = 0;
+    const progressStart = 11;
+    const progressEnd = 50;
+  
+    console.log(`Processing ${tracks.length} tracks in ${totalChunks} chunks of ${CHUNK_SIZE}`);
+  
+    const updateProgress = () => {
+      completedChunks++;
+      const chunkProgress = progressStart + ((progressEnd - progressStart) * (completedChunks / totalChunks));
+      onProgressUpdate(Math.round(chunkProgress));
+    };
+  
+    const chunkPromises = [];
+  
+    for (let i = 0; i < tracks.length; i += CHUNK_SIZE) {
+      const chunk = tracks.slice(i, i + CHUNK_SIZE);
+      const chunkNumber = Math.floor(i / CHUNK_SIZE) + 1;
+  
+      chunkPromises.push(limit(async () => {
+        const chunkStart = Date.now();
+  
+        const songs = chunk.map(trackItem => {
+          let localItemName = trackItem.track.name;
+          if (trackItem.track.name.includes("-") && !trackItem.track.name.includes("- Remix")) {
+            localItemName = trackItem.track.name.substring(0, trackItem.track.name.indexOf("-")).trim();
           }
-          // is the clean version
-
-          if (failedFilter) {
-            // Only search for clean versions if it's explicit and only fails profanity filter
-            if ((item.reason.length === 1) && (item.reason[0] === "Profanity")) {
-              if(item.explicit){
-                return { type: 'needs-clean-search', track: item };
+          return {
+            songTitle: localItemName,
+            songArtist: trackItem.track.artists[0].name
+          };
+        });
+  
+        console.log(`ANALYZING CHUNK ${chunkNumber}/${totalChunks} (${songs.length} songs)`);
+  
+        try {
+          const chunkResults = await AnalyzeSongsBatch(songs, chosenFilters);
+          console.log(`CHUNK ${chunkNumber} RESULTS:`, chunkResults);
+  
+          const cleanCheckLimit = pLimit(2);
+          const classifyLimit = pLimit(8);
+  
+          const classifiedResults = await Promise.all(chunkResults.map((item, index) =>
+            classifyLimit(async () => {
+              const trackItem = chunk[index];
+              const track = trackItem.track;
+              let failedFilter = false;
+              track.reason = [];
+  
+              if (item && item.status === 'success') {
+                track.trackAnalysis = item;
+                if ((chosenFilters.find(filter => filter.id === "profanity")) && item.profanity?.hasProfanity) {
+                  track.reason.push("Profanity");
+                  failedFilter = true;
+                }
+                if ((chosenFilters.find(filter => filter.id === "violence")) && item.violence > 0.428) {
+                  track.reason.push("Violence");
+                  failedFilter = true;
+                }
+                if ((chosenFilters.find(filter => filter.id === "sexual")) && item.sexually_explicit > 0.50) {
+                  track.reason.push("Sexual");
+                  failedFilter = true;
+                }
+              } else {
+                if (item && item.status === 'failed') {
+                  track.reason.push("Error");
+                  return { type: 'explicit', track };
+                } else {
+                  track.reason.push("No score");
+                  failedFilter = true;
+                }
               }
-              const cleanCheck = await isCleanVersion(item)
-
-              if(cleanCheck.isClean){
-                item.reason = ["clean version"]
-                return { type: 'clean', track: item };
-              }else{
-                return { type: 'explicit', track: item };
+  
+              if (failedFilter) {
+                if ((track.reason.length === 1) && (track.reason[0] === "Profanity")) {
+                  if (track.explicit) {
+                    return { type: 'needs-clean-search', track };
+                  }
+                  const cleanCheckStart = Date.now();
+                  const cleanCheck = await cleanCheckLimit(() => isCleanVersion(track));
+                  console.log(`isCleanVersion took ${Date.now() - cleanCheckStart}ms for track ${track.name}`);
+                  if (cleanCheck.isClean) {
+                    track.reason = ["clean version"];
+                    return { type: 'clean', track };
+                  } else {
+                    return { type: 'explicit', track };
+                  }
+                } else {
+                  return { type: 'explicit', track };
+                }
+              } else {
+                track.reason.push("passed filters");
+                return { type: 'clean', track };
               }
-            }else{
-              return { type: 'explicit', track: item };
+            })
+          ));
+  
+          for (const result of classifiedResults) {
+            if (result.type === 'clean') {
+              results.cleanTracks.push(result.track);
+            } else if (result.type === 'explicit') {
+              results.explicitTracks.push(result.track);
+            } else if (result.type === 'needs-clean-search') {
+              results.tracksNeedingCleanSearch.push(result.track);
             }
-          } else {
-            item.reason.push("passed filters")
-            return { type: 'clean', track: item };
           }
         } catch (error) {
-          console.error("Error analyzing track:", error);
-          return { type: 'error', error };
+          console.error(`CHUNK ${chunkNumber} FAILED:`, error);
+          chunk.forEach(trackItem => {
+            const track = trackItem.track;
+            track.reason = ["failed"];
+            results.explicitTracks.push(track);
+          });
         }
+  
+        console.log(`CHUNK ${chunkNumber} took ${Date.now() - chunkStart}ms`);
+        updateProgress();
       }));
-      
-      const batchResults = await Promise.all(tasks);
-      console.log("batch results: ", batchResults)
-
-      
-      for (const result of batchResults) {
-        console.log("RESULT: ", result)
-        if (result.type === 'clean') {
-          results.cleanTracks.push(result.track);
-        } else if (result.type === 'explicit') {
-          results.explicitTracks.push(result.track);
-        } else if (result.type === 'needs-clean-search') {
-          results.tracksNeedingCleanSearch.push(result.track);
-        }
-      }
-      
-      completedBatches++;
-      const batchProgress = progressStart + 
-          ((progressEnd - progressStart) * (completedBatches / totalBatches));
-      onProgressUpdate(Math.round(batchProgress));
-      
-      // small delay between batches to prevent rate limiting
-      await new Promise(resolve => setTimeout(resolve, 100));
     }
-    
-    onProgressUpdate(55); //  progress update before find clean versions step
-    
+  
+    await Promise.all(chunkPromises);
+  
+    onProgressUpdate(50);
     return results;
   };
+  
+  
 
-    const isCleanVersion = async (track) => {
-      try {
-        const name = track.name.toLowerCase();
-        const artist = track.artists[0].name.toLowerCase();
-        
-        const query = `track:"${name.replace(/"/g, '')}" artist:"${artist.replace(/"/g, '')}"`;
-        
-        const searchResult = await rateLimitedApi.call(
-          spotifyApi.search.bind(spotifyApi), 
-          query, 
-          ['track'], 
-          { limit: 5 }
-        );
-        
-        const explicitTrack = searchResult.tracks.items.find(item => {
-          const itemName = item.name.toLowerCase();
-          const itemArtists = item.artists.map(a => a.name.toLowerCase());
-          return item.explicit && itemArtists.includes(artist) && itemName === name;
-        });
-    
-        if (explicitTrack) {
-          return { isClean: true, reason: "clean version exists", track };
-        }
-    
-        return { isClean: false, reason: "no explicit version found", track };
-      } catch (error) {
-        console.error('Error finding clean track:', error);
-        return { isClean: false, error };
+  const isCleanVersion = async (track) => {
+    try {
+      const name = track.name.toLowerCase();
+      const artist = track.artists[0].name.toLowerCase();
+      
+      const query = `track:"${name.replace(/"/g, '')}" artist:"${artist.replace(/"/g, '')}"`;
+      
+      const searchResult = await rateLimitedApi.call(
+        spotifyApi.search.bind(spotifyApi), 
+        query, 
+        ['track'], 
+        { limit: 5 }
+      );
+      
+      const explicitTrack = searchResult.tracks.items.find(item => {
+        const itemName = item.name.toLowerCase();
+        const itemArtists = item.artists.map(a => a.name.toLowerCase());
+        return item.explicit && itemArtists.includes(artist) && itemName === name;
+      });
+
+      if (explicitTrack) {
+        return { isClean: true, reason: "clean version exists", track };
       }
-    };    
+
+      return { isClean: false, reason: "no explicit version found", track };
+    } catch (error) {
+      console.error('Error finding clean track:', error);
+      return { isClean: false, error };
+    }
+  };    
   
   const findCleanVersions = async (tracks) => {
-    onProgressUpdate(60); // Start of find clean versions phase
+    onProgressUpdate(60);
     
     console.log("tracks that need clean versions. in findclean: ", tracks);
     
     const foundCleanTracks = [];
 
-    const batchSize = 25; // Process 25 tracks at a time
+    const batchSize = 35; 
     const batches = [];
     
     for (let i = 0; i < tracks.length; i += batchSize) {
@@ -322,28 +328,27 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     
     const totalBatches = batches.length;
     let completedBatches = 0;
-    const progressStart = 65; // starting at 65%
-    const progressEnd = 95;   
+    const progressStart = 65;
+    const progressEnd = 95;
     
     onProgressUpdate(progressStart); 
     
-    // If no tracks need clean versions, skip ahead
     if (tracks.length === 0) {
       onProgressUpdate(progressEnd);
       return [];
     }
     
-    // Process each batch
     for (const batch of batches) {
-      const limit = pLimit(15); // Process 15 tracks concurrently
+      const limit = pLimit(10); 
       
       const tasks = batch.map(track => limit(async () => {
         const name = track.name.toLowerCase();
         const artist = track.artists[0].name.toLowerCase();
         const cacheKey = `${name}-${artist}`;
         
-
         try {
+          await delay(15); 
+          
           const query = `track:"${name.replace(/"/g, '')}" artist:"${artist.replace(/"/g, '')}"`;
           
           const searchResult = await rateLimitedApi.call(
@@ -358,7 +363,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
             const itemArtists = item.artists.map(a => a.name.toLowerCase());
             const isClean = !item.explicit;
             const isSameArtist = itemArtists.includes(artist);
-            const isTitleClean = itemName.includes("clean") || itemName.includes("radio version") || itemName.includes("radio edit") || itemName.includes("radio mix")  ;
+            const isTitleClean = itemName.includes("clean") || itemName.includes("radio version") || itemName.includes("radio edit") || itemName.includes("radio mix");
             const isExactNameMatch = itemName === name;
         
             return isClean && isSameArtist && (isExactNameMatch || isTitleClean);
@@ -379,28 +384,32 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         }
       }));
       
-      completedBatches++;
-      const batchProgress = progressStart + 
-          ((progressEnd - progressStart) * (completedBatches / totalBatches));
-      onProgressUpdate(Math.round(batchProgress));
-      
       const batchResults = await Promise.all(tasks);
       batchResults.forEach(result => {
         if (result.found) {
           foundCleanTracks.push(result.track);
         }
       });
+      
+      completedBatches++;
+      const batchProgress = progressStart + 
+          ((progressEnd - progressStart) * (completedBatches / totalBatches));
+      onProgressUpdate(Math.round(batchProgress));
+      
+      // OPTIMIZATION 8: Reduce delay since backend is much faster now
+      if (completedBatches < totalBatches) {
+        await delay(100); // Reduced from 200ms to 100ms
+      }
     }
     
     return foundCleanTracks;
   };
 
-  /// for tracks taken from cache, preserve order
   // Pre-check cache for known clean alternatives
   const preCheckCache = (tracks) => {
     const preFound = [];
     const stillNeedSearch = [];
-    console.log("original tracks passed into cache: ", tracks)
+    console.log("original tracks passed into cache: ", tracks);
     
     tracks.forEach(track => {
       const cacheKey = `${track.name.toLowerCase()}-${track.artists[0].name.toLowerCase()}`;
@@ -421,53 +430,50 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   // Main function to prepare the clean playlist
   const prepareCleanPlaylist = async (id) => {
     try {
-      const startTime = Date.now();
-      
-      // Initial progress update
+      const totalStart = Date.now();
+      let lastCheckpoint = totalStart;
+  
+      const logStep = (stepName) => {
+        const now = Date.now();
+        console.log(`${stepName} took ${now - lastCheckpoint}ms`);
+        lastCheckpoint = now;
+      };
+  
       onProgressUpdate(1);
-      
-      // 1. Fetch tracks (1-10% progress)
+  
       console.log("Fetching playlist tracks");
       const playlistTracks = await getPlaylistTracks(id);
-      console.log(playlistTracks)
-
-
-      
-      // 2. Analyze tracks (11-55% progress)
+      logStep("getPlaylistTracks");
+  
       console.log("Analyzing tracks data");
       const tracksData = await analyzeTracksData(playlistTracks);
-
-      console.log("tracks needing clean search: ", tracksData.tracksNeedingCleanSearch)
-      
-      // 3. Pre-check cache for known clean alternatives
+      logStep("analyzeTracksData");
+  
+      console.log("tracks needing clean search: ", tracksData.tracksNeedingCleanSearch);
+  
       const { preFound, stillNeedSearch } = preCheckCache(tracksData.tracksNeedingCleanSearch);
-      console.log("Found", preFound.length, "tracks in cache, still need to search for", stillNeedSearch.length);
-      console.log("still need search array", stillNeedSearch);
-
-      
-      // 4. Find clean versions (60-95% progress)
+      logStep("preCheckCache");
+  
       console.log("Finding clean versions for", stillNeedSearch.length, "tracks");
       const newFoundCleanTracks = stillNeedSearch.length > 0 
         ? await findCleanVersions(stillNeedSearch)
         : [];
-      
-      // 5. Finalize results (95-100% progress)
+      logStep("findCleanVersions");
+  
       console.log("Finalizing playlist");
-      onProgressUpdate(96); 
-
-      // prevent duplicates:
+      onProgressUpdate(96);
+  
+      // Sorting & combining
       const trackUris = new Set();
       const allCleanTracks = [];
-
-      // add all the initially clean tracks
+  
       tracksData.cleanTracks.forEach(track => {
         if (!trackUris.has(track.uri)) {
           trackUris.add(track.uri);
           allCleanTracks.push(track);
         }
       });
-
-      // add all found clean tracks (both from cache and newly found)
+  
       const allFoundCleanTracks = [...preFound, ...newFoundCleanTracks];
       allFoundCleanTracks.forEach(track => {
         if (!trackUris.has(track.uri)) {
@@ -475,47 +481,38 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           allCleanTracks.push(track);
         }
       });
-      
-      // find which tracks were excluded (those that needed clean versions but none were found)
+  
       const foundCleanTrackIds = new Set(allFoundCleanTracks.map(track => track.id));
       const exclTracksNeededClean = stillNeedSearch
         .filter(item => !newFoundCleanTracks.some(clean => 
           clean.name.toLowerCase() === item.name.toLowerCase() && 
           clean.artists[0].name.toLowerCase() === item.artists[0].name.toLowerCase()
-        ))
-        .map(item => item);
-      
+        ));
+  
       const excludedTracks = [
         ...tracksData.explicitTracks,
         ...exclTracksNeededClean
       ];
-
-      allCleanTracks.sort((a,b) => {
-        return a.playlist_track_number - b.playlist_track_number
-      })
-
-      excludedTracks.sort((a,b) =>{
-        return a.playlist_track_number - b.playlist_track_number
-      })
- 
-      onProgressUpdate(98); // Almost done
-      
-      // Small delay to show progress completion
+  
+      allCleanTracks.sort((a,b) => a.playlist_track_number - b.playlist_track_number);
+      excludedTracks.sort((a,b) => a.playlist_track_number - b.playlist_track_number);
+  
+      logStep("sorting & combining");
+  
+      onProgressUpdate(98);
       setTimeout(() => onProgressUpdate(100), 200);
-      
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-      console.log("Cleaning time: ", duration)
-
-      // Google Analytics tracking
+  
+      const totalEnd = Date.now();
+      console.log(`Total cleaning time: ${totalEnd - totalStart}ms`);
+  
       ReactGA.event({
         category: "Playlist",
         action: "Playlist Clean Duration",
         label: playlistId,
-        value: duration,
+        value: totalEnd - totalStart,
         nonInteraction: true,
       });
-      // track count 
+  
       ReactGA.event({
         category: "Playlist",
         action: "Length of Playlist Cleaned",
@@ -523,7 +520,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         value: totalTrackCount,
         nonInteraction: true,
       });
-      
+  
       return {
         name: `${playlistName} (auXmod Version)`,
         tracksAdded: allCleanTracks,

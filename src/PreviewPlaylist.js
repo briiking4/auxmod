@@ -323,7 +323,7 @@ useEffect(() => {
                           height: '100%'
                         }}>
                           {track.reason && track.reason.includes('Profanity') && (
-                            <Tooltip title={`Profanity: ${track.score.profanity.blacklistedWordsFound?.map(redactWord).join(', ')}`}
+                            <Tooltip title={`Profanity: ${track.trackAnalysis.profanity.blacklistedWordsFound?.map(redactWord).join(', ')}`}
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
                             >
@@ -355,7 +355,7 @@ useEffect(() => {
                               <span style={{marginLeft: '4px'}}><MusicOffIcon/></span>
                             </Tooltip>
                           )}
-                          {track.reason && track.reason.includes('Error') && (
+                          {track.reason && track.reason.includes('failed') && (
                             <Tooltip title="Error"
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
@@ -372,7 +372,7 @@ useEffect(() => {
                               <span style={{marginLeft: '4px'}}><SoapIcon/></span>
                             </Tooltip>
                           )}
-                          {track.reason && track.reason.includes('passed filters') && (track.score.profanity == null || (track.score.profanity?.whitelistedWordsFound.length === 0)) && (
+                          {track.reason && track.reason.includes('passed filters') && (track.trackAnalysis.profanity == null || (track.trackAnalysis.profanity?.whitelistedWordsFound.length === 0)) && (
                             <Tooltip title="Passed selected filters"
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
@@ -380,8 +380,8 @@ useEffect(() => {
                               <span style={{marginLeft: '4px'}}><VerifiedIcon/></span>
                             </Tooltip>
                           )}
-                          {track.reason && track.score && (track.score.profanity?.whitelistedWordsFound.length > 0) && track.reason.includes('passed filters') && (
-                            <Tooltip title={`Contains allowed words: ${track.score.profanity?.whitelistedWordsFound?.join(', ')}`}
+                          {track.reason && track.trackAnalysis && (track.trackAnalysis.profanity?.whitelistedWordsFound.length > 0) && track.reason.includes('passed filters') && (
+                            <Tooltip title={`Contains allowed words: ${track.trackAnalysis.profanity?.whitelistedWordsFound?.join(', ')}`}
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
                             >

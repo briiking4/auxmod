@@ -10,7 +10,7 @@ import { filterCategories, iconMap } from './filterConfig';
 import { Helmet } from 'react-helmet';
 
 
-export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilters, progress }) {
+export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilters, progress, chosenPlaylist }) {
   const [loading, setLoading] = useState(false);
   const [filterState, setFilterState] = useState({});
   const [settingsApplied, setSettingsApplied] = useState(false);
@@ -217,6 +217,14 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
             }}
           />
         )}
+      </Box>
+      <Box sx={{py:2}}>
+        {
+        chosenPlaylist.total > 100 && loading &&
+
+        <Typography>Woah this is a big playlist! This may take a few minutes.</Typography>
+
+        }
       </Box>
     </Container>
     </>
