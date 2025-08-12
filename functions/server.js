@@ -17,7 +17,7 @@ import {
 } from 'obscenity';
 import { spanishDataset, spanishEnglishBlacklistTransformers } from '../src/spanishDataset.js';
 import PQueue from 'p-queue';
-import Genius from 'genius-lyrics';
+
 
 dotenv.config()
 
@@ -197,7 +197,9 @@ async function getLyrics(songTitle, songArtist) {
     // const encodedArtist = encodeURIComponent(songArtist);
     // const encodedTitle = encodeURIComponent(songTitle);
     // const url = `https://api.lyrics.ovh/v1/${encodedArtist}/${encodedTitle}`;
-    const Client = new Genius.Client(process.env.GENIUS_API_KEY);
+    let Genius;
+      Genius = await import('genius-lyrics');
+      const Client = new Genius.Client(process.env.GENIUS_API_KEY);
 
     const query = `${songTitle} ${songArtist}`;
     const results = await Client.songs.search(query);
