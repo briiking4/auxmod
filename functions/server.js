@@ -19,7 +19,10 @@ import { spanishDataset, spanishEnglishBlacklistTransformers } from '../src/span
 import PQueue from 'p-queue';
 
 import { createRequire } from "module";
-const require = createRequire(import.meta.url);
+import path from "path";
+
+const require = createRequire(path.resolve());
+
 
 const Genius = require("genius-lyrics");
 
