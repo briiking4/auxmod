@@ -222,7 +222,7 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
         {
         chosenPlaylist.total > 100 && loading &&
 
-        <Typography>Woah this is a big playlist! This may take a few minutes.</Typography>
+        <Typography>Woah this is a big playlist! This will take a few minutes.</Typography>
 
         }
       </Box>
