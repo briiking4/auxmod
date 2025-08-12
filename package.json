@@ -27,6 +27,7 @@
     "express": "^4.21.2",
     "genius-lyrics": "^4.4.7",
     "gpt-3-encoder": "^1.1.4",
+    "gpt-tokenizer": "^3.0.1",
     "obscenity": "^0.4.3",
     "openai": "^4.86.1",
     "p-limit": "^6.2.0",

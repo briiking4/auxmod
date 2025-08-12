@@ -329,7 +329,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               {
                 view === 'excluded' && (
                   <>
-                    <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>No clean version was found if profanity is the only issue. Add songs back in you'd include — and drop feedback below!</Alert>
+                    <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>If profanity is the only "reason" listed, no clean version was found. Feel free to add back any songs you want to include!</Alert>
 
                     <Box 
                       sx={{ 
@@ -363,7 +363,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               {
                 view === 'included' && (
                   <>
-                   <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}> See an E tag? Don’t worry — I screened the lyrics. Remove anything you’d leave out, and drop feedback below!</Alert>
+                   <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>Some songs have an E tag even without explicit content. I scan 30% of lyrics and filter based on your selections. Feel free to remove any song that seems off.</Alert>
 
                     <Box 
                       sx={{ 

@@ -143,7 +143,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   const analyzeTracksData = async (tracks) => {
     onProgressUpdate(11);
   
-    const CHUNK_SIZE = 1;
+    const CHUNK_SIZE = 10;
     const CHUNK_CONCURRENCY = 1;
     const limit = pLimit(CHUNK_CONCURRENCY);
   
@@ -182,7 +182,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           }
           return {
             songTitle: localItemName,
-            songArtist: trackItem.track.artists[0].name
+            songArtist: trackItem.track.artists[0].name,
+            songIsrc: trackItem.track.external_ids.isrc
           };
         });
   
@@ -319,7 +320,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     
     const foundCleanTracks = [];
 
-    const batchSize = 35; 
+    const batchSize = 10; 
     const batches = [];
     
     for (let i = 0; i < tracks.length; i += batchSize) {
@@ -339,16 +340,14 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     }
     
     for (const batch of batches) {
-      const limit = pLimit(10); 
+      const limit = pLimit(3); 
       
       const tasks = batch.map(track => limit(async () => {
         const name = track.name.toLowerCase();
         const artist = track.artists[0].name.toLowerCase();
         const cacheKey = `${name}-${artist}`;
         
-        try {
-          await delay(15); 
-          
+        try {          
           const query = `track:"${name.replace(/"/g, '')}" artist:"${artist.replace(/"/g, '')}"`;
           
           const searchResult = await rateLimitedApi.call(
@@ -396,9 +395,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           ((progressEnd - progressStart) * (completedBatches / totalBatches));
       onProgressUpdate(Math.round(batchProgress));
       
-      // OPTIMIZATION 8: Reduce delay since backend is much faster now
       if (completedBatches < totalBatches) {
-        await delay(100); // Reduced from 200ms to 100ms
+        await delay(200);
       }
     }
     

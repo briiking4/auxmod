@@ -80,6 +80,9 @@ export default function App() {
 
   const onboardingSurveyId = "019674db-5402-0000-02e5-f606d2ef5bc1"
 
+  const feedbackPopUpSurveyId = '01989f84-2030-0000-6dd4-4382915e2fae'
+  const feedbackPopUpQuestionId = 'eb2251a2-6ea2-45aa-a227-31311215ea4d'
+
 
   useEffect(() => {
     ReactGA.initialize('G-VKQ70YNR1N', { testMode: process.env.NODE_ENV !== 'production' });
@@ -175,7 +178,6 @@ const handleOnboardingSubmit = (value) => {
   })
 
 }
-
 
   // Recieving logged in status from the Login Compt
 
@@ -338,6 +340,7 @@ const handleOnboardingSubmit = (value) => {
   const handleSavedPlaylist = (id) => {
     setSavedPlaylist(id)
   }
+
 
 
   return (

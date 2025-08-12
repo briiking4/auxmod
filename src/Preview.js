@@ -17,10 +17,12 @@ export default function Preview({sendStatus, item}) {
 
     console.log(item)
 
+    const playlistLimit = 500
+
 
     useEffect(() => {
       console.log("PLaylist Data recieved in Preview from Choose Playlist", item)
-      if(item.total > 200){
+      if(item.total > playlistLimit){
         setPlaylistLimitHit(true)
       }
       if(item.total > 0){
@@ -119,7 +121,7 @@ export default function Preview({sendStatus, item}) {
               <Box sx={{ flexShrink: 0, textAlign: 'center' }}>
                 {playlistLimitHit && 
                   <Typography variant="subtitle2">
-                    Playlist is too large. Please select a playlist with 200 tracks or less.
+                    Playlist is too large. Please select a playlist with {playlistLimit} tracks or less.
                   </Typography>
                 }
                 {!tracksAvalible &&

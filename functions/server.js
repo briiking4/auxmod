@@ -17,6 +17,8 @@ import {
 } from 'obscenity';
 import { spanishDataset, spanishEnglishBlacklistTransformers } from '../src/spanishDataset.js';
 import PQueue from 'p-queue';
+import { encode } from "gpt-tokenizer";
+
 
 
 dotenv.config()
@@ -40,6 +42,7 @@ const app = express();
 
 app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
 app.use(express.json());
+
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working in dev!' });
@@ -158,66 +161,40 @@ app.post('/api/getPosthogUser', async (req, res) => {
 });
 
 
-function cleanLyrics(rawLyrics) {
-  if (!rawLyrics) return null;
-
-  let text = rawLyrics;
-
-  // First, find and remove everything from "Lyrics" onwards (including "Lyrics")
-  const lyricsIndex = text.indexOf("Lyrics");
-  if (lyricsIndex !== -1) {
-    text = text.substring(lyricsIndex + "Lyrics".length);
-  }
-
-  const lines = text.split('\n');
-  const readMoreIndex = lines.findIndex(line =>
-    line.toLowerCase().includes('read more')
-  );
-
-  // If "Read More" is found, return everything after it
-  if (readMoreIndex !== -1 && readMoreIndex < lines.length - 1) {
-    text = lines.slice(readMoreIndex + 1).join('\n');
-  }
-
-  // Remove text in brackets [like this]
-  text = text.replace(/\[.*?\]/g, '');
-
-  // Clean up extra whitespace and empty lines
-  const cleanedLines = text.split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
-
-  return cleanedLines.join('\n').trim();
-}
-
 
 // Lyrics fetching function
-async function getLyrics(songTitle, songArtist) {
+async function getLyrics(songTitle, songArtist, track_isrc) {
   try {
     // const encodedArtist = encodeURIComponent(songArtist);
     // const encodedTitle = encodeURIComponent(songTitle);
     // const url = `https://api.lyrics.ovh/v1/${encodedArtist}/${encodedTitle}`;
-    let Genius;
-      Genius = await import('genius-lyrics');
-      const Client = new Genius.Client();
-
-    const query = `${songTitle} ${songArtist}`;
-    const results = await Client.songs.search(query);
-
-  if (!results.length) {
-    throw new Error("No results found on Genius");
-  }
-
-  const firstSong = results[0];
-
-  const lyrics = await firstSong.lyrics();
-
-  const cleanedLyrics = cleanLyrics(lyrics);
 
 
-  console.log(cleanedLyrics);
+    const encodedArtist = encodeURIComponent(songArtist);
+    const encodedTitle = encodeURIComponent(songTitle);
 
-  return cleanedLyrics;
+
+    const url = `https://api.musixmatch.com/ws/1.1/track.lyrics.get?apikey=564d37f16aeeda836dfa71dde9556561&track_isrc=${track_isrc}`;
+    const options = {method: 'GET', body: undefined};
+
+    try {
+      const response = await fetch(url, options);
+      const data = await response.json();
+      console.log(data);
+      let lyrics = data.message.body.lyrics.lyrics_body;
+    
+      // Cut off everything starting from the first occurrence of '...'
+      const cutOffIndex = lyrics.indexOf('...');
+      if (cutOffIndex !== -1) {
+        lyrics = lyrics.slice(0, cutOffIndex).trim();
+      }
+    
+      console.log(lyrics);
+      return lyrics;
+    } catch (error) {
+      console.error(error);
+    }
+    
 
   } catch (error) {
     console.error("Error in getLyrics:", error.message);
@@ -390,7 +367,7 @@ app.post('/api/analyze-song', async (req, res) => {
 });
 
 const TOKEN_LIMIT = 10000; // TPM from OpenAI
-const REFILL_INTERVAL_MS = 50; //
+const REFILL_INTERVAL_MS = 1000; //
 const TOKEN_REFILL_RATE = TOKEN_LIMIT / 60000; // tokens per ms
 
 let tokensAvailable = TOKEN_LIMIT;
@@ -414,6 +391,11 @@ function processQueue() {
     request.resolve();
   }
 }
+
+const MAX_REQUESTS_PER_MIN = 60; 
+let requestsInLastMinute = [];
+
+
 
 function waitForTokens(tokensNeeded) {
   const startTime = Date.now();
@@ -441,12 +423,11 @@ function waitForTokens(tokensNeeded) {
 }
 
 setInterval(refillTokens, REFILL_INTERVAL_MS);
-
+  
 function estimateTokens(text) {
-  if (!text) return 0;
-  const tokens = text.trim().split(/[\s.,!?;:"'()\-]+/).filter(Boolean);
-  return tokens.length;
+  return encode(text).length;
 }
+
 
 
 async function retry(func, maxRetries = 3) {
@@ -486,7 +467,13 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
     const lyricsResults = await Promise.all(
       songs.map(async (song, index) => {
         try {
-          const lyrics = await getLyrics(song.songTitle, song.songArtist);
+          console.log("SONG TITLE FROM REQ:", song.songTitle)
+          console.log("SONG ARTIST FROM REQ:", song.songArtist)
+          console.log("SONG ISRC FROM REQ:", song.songIsrc)
+
+
+
+          const lyrics = await getLyrics(song.songTitle, song.songArtist, song.songIsrc);
           return { index, song, lyrics: lyrics?.trim() ? lyrics : null, error: null };
         } catch (error) {
           console.warn(`Failed to get lyrics for ${song.songTitle} by ${song.songArtist}:`, error.message);
