@@ -18,7 +18,6 @@ import {
 import { spanishDataset, spanishEnglishBlacklistTransformers } from '../src/spanishDataset.js';
 import Genius from 'genius-lyrics';
 import PQueue from 'p-queue';
-import { encode } from 'gpt-3-encoder';
 
 
 dotenv.config()
@@ -443,9 +442,11 @@ function waitForTokens(tokensNeeded) {
 setInterval(refillTokens, REFILL_INTERVAL_MS);
 
 function estimateTokens(text) {
-  const tokens = encode(text);
+  if (!text) return 0;
+  const tokens = text.trim().split(/[\s.,!?;:"'()\-]+/).filter(Boolean);
   return tokens.length;
 }
+
 
 async function retry(func, maxRetries = 3) {
   for (let i = 0; i < maxRetries; i++) {
