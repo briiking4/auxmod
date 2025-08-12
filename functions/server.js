@@ -16,8 +16,12 @@ import {
   parseRawPattern
 } from 'obscenity';
 import { spanishDataset, spanishEnglishBlacklistTransformers } from '../src/spanishDataset.js';
-import Genius from 'genius-lyrics';
 import PQueue from 'p-queue';
+
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
+const Genius = require("genius-lyrics");
 
 
 dotenv.config()
