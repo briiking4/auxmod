@@ -3,6 +3,7 @@
   "name": "auxmod",
   "version": "5.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "react-scripts start",
     "server": "node functions/server.js",

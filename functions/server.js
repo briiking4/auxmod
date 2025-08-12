@@ -17,15 +17,7 @@ import {
 } from 'obscenity';
 import { spanishDataset, spanishEnglishBlacklistTransformers } from '../src/spanishDataset.js';
 import PQueue from 'p-queue';
-
-import { createRequire } from "module";
-import path from "path";
-
-const require = createRequire(path.resolve());
-
-
-const Genius = require("genius-lyrics");
-
+import Genius from 'genius-lyrics';
 
 dotenv.config()
 
@@ -205,7 +197,6 @@ async function getLyrics(songTitle, songArtist) {
     // const encodedArtist = encodeURIComponent(songArtist);
     // const encodedTitle = encodeURIComponent(songTitle);
     // const url = `https://api.lyrics.ovh/v1/${encodedArtist}/${encodedTitle}`;
-    console.log("GENIUS_KEY in Netlify:", process.env.GENIUS_API_KEY)
     const Client = new Genius.Client(process.env.GENIUS_API_KEY);
 
     const query = `${songTitle} ${songArtist}`;
