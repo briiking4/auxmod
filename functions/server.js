@@ -199,7 +199,7 @@ async function getLyrics(songTitle, songArtist) {
     // const url = `https://api.lyrics.ovh/v1/${encodedArtist}/${encodedTitle}`;
     let Genius;
       Genius = await import('genius-lyrics');
-      const Client = new Genius.Client(process.env.GENIUS_API_KEY);
+      const Client = new Genius.Client();
 
     const query = `${songTitle} ${songArtist}`;
     const results = await Client.songs.search(query);
