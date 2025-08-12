@@ -27,3 +27,6 @@ Content-Type = "application/wasm"
   
 [functions]
   node_bundler = "esbuild"
+
+[functions."*"]
+external_node_modules = ["genius-lyrics"]
