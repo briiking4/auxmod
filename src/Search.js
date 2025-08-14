@@ -397,7 +397,8 @@ export default function Search({ sendItemSelected, guestMode }) {
       overflow: 'hidden'
     }}>
       {/* Filter Buttons */}
-      <Filter sendSearchFilterStatus={handleFilterStatus} type="search" hideFilter="My Library" />
+      <Filter sendSearchFilterStatus={handleFilterStatus} type="search" hideFilter={guestMode ? "My Library" : undefined}
+ />
       
       {/* Search Bar */}
       <Container sx={{ m: 'auto', display: 'flex', px: 0 }}>
