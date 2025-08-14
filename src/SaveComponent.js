@@ -28,7 +28,7 @@ import { Helmet } from 'react-helmet';
 
 
 
-export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilters, userId, sendSavedPlaylist }) {
+export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilters, userId, sendSavedPlaylist, guestMode }) {
   const [view, setView] = useState('included');
   const [loading, setLoading] = useState(false);
   const [localCleanedPlaylist, setLocalCleanedPlaylist] = useState(cleanedPlaylist)
@@ -439,7 +439,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               <Button
                 variant="contained"
                 sx={{ minWidth: '102px', borderRadius: '50px' }}
-                disabled={displayedTracks.length === 0}
+                disabled={displayedTracks.length === 0 || guestMode}
                 loading={loading}
                 onClick={handleSave}
               >

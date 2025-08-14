@@ -23,7 +23,7 @@ import { encode } from "gpt-tokenizer";
 
 dotenv.config()
 
-let prod = true; 
+let prod = false; 
 
 
 var client_id = process.env.SPOTIFY_CLIENT_ID;
@@ -82,6 +82,28 @@ function generateRandomString(length){
       }));
 
  });
+
+ app.get('/api/guest_token', async (req, res) => {
+  try {
+    const params = new URLSearchParams();
+    params.append('grant_type', 'client_credentials');
+
+    const response = await axios.post('https://accounts.spotify.com/api/token', params, {
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(client_id + ':' + client_secret).toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    res.json({
+      access_token: response.data.access_token,
+      expires_in: response.data.expires_in
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get token' });
+  }
+});
+
 
  app.get('/api/callback', async (req, res) => {
   const code = req.query['code'];

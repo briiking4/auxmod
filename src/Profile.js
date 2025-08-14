@@ -3,11 +3,11 @@ import { useState, useEffect} from 'react';
 import {Box, Container, Typography, Skeleton }from '@mui/material';
 import spotifyApi from './spotifyApi';
 import defaultProf from './default-prof.svg'
+import logo from './auxmod_logo.svg';
 
 
 
-
-export default function Profile({sendUserInfo}) {
+export default function Profile({sendUserInfo, guestMode}) {
 
   const [userProfile, setUserProfile] = useState({
     userId: '',
@@ -39,7 +39,14 @@ export default function Profile({sendUserInfo}) {
   };
 
   useEffect(() => {
-    getUserProfile();
+    if(!guestMode){
+      getUserProfile();
+    }else{
+      setUserProfile(() => ({
+        profPic: logo,
+        name: 'Guest auXplorer',
+      }));
+    }
   }, [])
 
   return (
@@ -57,7 +64,7 @@ export default function Profile({sendUserInfo}) {
                 height:'48px',
                 borderRadius:"50%",
                 overflow:"hidden",
-                background: "#B3B3B3",
+                backgroundColor: 'primary.main',
             }}
         >
           {userProfile.profPic === '' ?

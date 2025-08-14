@@ -1,16 +1,17 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { Container, Typography, Button, Box, keyframes } from '@mui/material';
+import { Container, Typography, Button, Box, keyframes, TextField } from '@mui/material';
 // import logo from './logo.png';
 import logo from './auxmod_logo.svg';
-import spotifyApi from './spotifyApi';
+import spotifyApi, {initGuestAccess} from './spotifyApi';
 
-export default function Login({ sendLoginStatus, sendAccessToken }) {
+export default function Login({ sendLoginStatus, sendAccessToken, sendGuestModeStatus }) {
   const [state, setState] = useState({
     loggedIn: false,
     token: '',
     refreshToken: '',
     expiresAt: null,
+    guestMode: false,
   });
   
   // Add state to control when content is visible
@@ -119,6 +120,7 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
   // Update access token in parent component when it changes
   useEffect(() => {
     if (state.token) {
+      console.log("TOKEN CHANGE")
       sendAccessToken(state.token);
     }
   }, [state.token, sendAccessToken]);
@@ -130,6 +132,28 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
     }
   }, [state.loggedIn, sendLoginStatus]);
 
+  // Update login status in parent component when userMode changes
+
+  useEffect(() => {
+    if (state.guestMode) {
+      sendGuestModeStatus(true );
+    }
+  }, [state.guestMode, sendGuestModeStatus]);
+
+
+  const handleGuestLogin= async () => {  
+    // Get guest token from backend
+    const guestToken = await initGuestAccess();
+    console.log(guestToken)
+  
+    // Set guest mode + store token in state
+    setState((prevState) => ({
+      ...prevState,
+      guestMode: true,
+      token: guestToken
+    }));
+  };
+  
   // Define animations
   const spinIn = keyframes`
     from {
@@ -210,8 +234,10 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
           <Container
             sx={{
               display: 'flex',
-              flexDirection: 'row',
+              flexDirection: 'column',
               justifyContent: 'center',
+              alignItems: 'center',
+              gap: 5,
               my: 4,
               '& .MuiButtonBase-root': {
                 borderRadius: '50px',
@@ -223,13 +249,23 @@ export default function Login({ sendLoginStatus, sendAccessToken }) {
             }}
           >
             {/* <Typography>AuXmod is currently under maintenance. Please check back on 7/20/25!</Typography> */}
-            <Button 
-              variant="contained" 
-              sx={{ minWidth: '102px', minHeight: '42px' }}
-              href={`${process.env.REACT_APP_BACKEND_URL}/login`}    
+            <Box sx={{display: 'flex', flexDirection:'column'}}>
+              <Button 
+                variant="contained" 
+                sx={{ width: '200px', minHeight: '42px'}}
+                href={`${process.env.REACT_APP_BACKEND_URL}/login`}    
+              >
+                Login with Spotify
+              </Button>
+            </Box>
+
+            <Box
+              sx={{ width: '200px', minHeight: '42px'}}
+              onClick={handleGuestLogin}
             >
-              Login with Spotify
-            </Button>
+              <Button type="submit">Try as a Guest</Button>
+            </Box>
+
           </Container>
         </>
       )}

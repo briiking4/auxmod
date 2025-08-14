@@ -19,6 +19,7 @@ import { usePostHog } from 'posthog-js/react'
 
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 import OnboardingSurvey from './OnboardingSurvey';
+import PreviewPlaylist from './PreviewPlaylist';
 
 // LEFT OFF: playlist_track_number carry over for find clean versions and tracks pull from cache too
 
@@ -28,6 +29,10 @@ export default function App() {
   // Logged in Status
 
   const [loggedIn, setLoggedIn] = useState(false);
+
+  // Mode Status
+
+  const [guestMode, setGuestMode] = useState(false);
 
   // Access token state (have it or not)
 
@@ -183,6 +188,12 @@ const handleOnboardingSubmit = (value) => {
 
   const handleLoginStatus= (state) =>{
     setLoggedIn(state);
+  }
+
+  
+  const handleGuestModeStatus= (state) =>{
+    console.log("GOT GUEST MODE: ", state )
+    setGuestMode(state);
   }
 
   // Recieving the access token from the Login Compt
@@ -359,10 +370,90 @@ const handleOnboardingSubmit = (value) => {
       backgroundColor:'transparent'
       }}>
     
-    { !loggedIn ? (
-      <Login sendLoginStatus={handleLoginStatus} sendAccessToken={handleAccessToken}/>
+    { !loggedIn && !guestMode ? (
+      <Login sendLoginStatus={handleLoginStatus} sendAccessToken={handleAccessToken} sendGuestModeStatus={handleGuestModeStatus}/>
     ) : (
       <>
+
+      {
+        guestMode ? 
+         <>
+          <Profile sendUserInfo={handleUserInfo} guestMode={guestMode}/>
+
+          <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
+            {
+              activeStep === 0 ? 
+                <ChoosePlaylist sendStatus={handleStepsStatus} sendChosenPlaylist={handleChosenPlaylist} guestMode={guestMode}/>
+              : activeStep === 1 ?
+                <SetFilters onApplyFilters={handleApplyFilters} chosenPlaylist={chosenPlaylist} 
+                  sendChosenFilters={handleChosenFilters} sendStatus={handleStepsStatus} 
+                  progress={cleaningProgress}/>
+              : activeStep === 2 ?
+              <>
+                {!stepsStatus[2] ? 
+                  <SaveComponent sendStatus={handleStepsStatus} cleanedPlaylist={cleanedPlaylist} 
+                    chosenFilters={chosenFilters} userId={userId} sendSavedPlaylist={handleSavedPlaylist} guestMode={guestMode}/>
+                :
+                <>
+                  <Done savedPlaylist={savedPlaylist} originalPlaylistName={chosenPlaylist.name}/>
+                  <Container
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      '& .MuiButtonBase-root': {
+                        borderRadius: '50px',
+                      },
+                      p:0,
+                      mt:13
+                    }}
+                  >
+                    <Button 
+                      variant="contained" 
+                      sx={{ minWidth: '170px', minHeight:'40px' }}
+                      onClick={() => {
+                        console.log("Clean again");
+                        setActiveStep(0);
+                        setStepsStatus([false, false, false]);
+                        ReactGA.event({
+                          category: 'User',
+                          action: `Clean another playlist Clicked`
+                        });
+                      }}
+                    >
+                      <FirstPageIcon/>
+                      Clean Another Playlist
+                    </Button>
+                  </Container>
+                </> 
+                }
+              </>
+              : <></>
+            }
+            <Box 
+              sx={{
+                mt: 'auto', 
+                textAlign: 'left',
+                width: '100%',
+                display:'flex',
+                justifyContent:'space-between',
+                alignItems:'center'
+              }}
+            >
+              <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
+             <Box >
+              <Button id="feedback-button" variant="contained" size="small">
+                Leave feedback
+              </Button>
+              
+             </Box>
+            </Box>
+         
+         </>
+
+        :
+        <>
+
         <Profile sendUserInfo={handleUserInfo}/>
         
         {loadingSurveys ? (
@@ -442,6 +533,9 @@ const handleOnboardingSubmit = (value) => {
             </Box>
           </>
         )}
+        </>
+      }
+        
       </>
     )}
     </Container>

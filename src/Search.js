@@ -9,9 +9,9 @@ import spotifyApi from './spotifyApi';
 import ReactGA from 'react-ga4';
 
 
-export default function Search({ sendItemSelected }) {
+export default function Search({ sendItemSelected, guestMode }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('My Library');
+  const [selectedFilter, setSelectedFilter] = useState('');
   const [userPlaylists, setUserPlaylists] = useState([]);
   const [searchList, setSearchList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +27,12 @@ export default function Search({ sendItemSelected }) {
 
   useEffect(() => {
     ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Search Playlists" });
+    if(!guestMode){
+      setSelectedFilter('My Library')
+    }else{
+      setSelectedFilter('All of Spotify')
+
+    }
 }, []);
 
   // Get User Playlists with pagination
@@ -391,7 +397,7 @@ export default function Search({ sendItemSelected }) {
       overflow: 'hidden'
     }}>
       {/* Filter Buttons */}
-      <Filter sendSearchFilterStatus={handleFilterStatus} type="search" />
+      <Filter sendSearchFilterStatus={handleFilterStatus} type="search" hideFilter="My Library" />
       
       {/* Search Bar */}
       <Container sx={{ m: 'auto', display: 'flex', px: 0 }}>

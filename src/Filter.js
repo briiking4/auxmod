@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { Box, Button, SvgIcon, useMediaQuery, useTheme, Slider, Stack} from '@mui/material';
+import { Box, Button, SvgIcon, useMediaQuery, useTheme, Slider, Stack, Tooltip} from '@mui/material';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 
 
 
-export default function Filter({ sendSearchFilterStatus, type, loading }) {
+export default function Filter({ sendSearchFilterStatus, type, loading, hideFilter }) {
   const [filtersList, setFilters] = useState([]);
 
   const theme = useTheme();
@@ -18,10 +18,18 @@ export default function Filter({ sendSearchFilterStatus, type, loading }) {
     let initialFilters = [];
     
     if (type === 'search') {
-      initialFilters = [
-        { label: 'My Library', isSelected: true }, 
-        { label: 'All of Spotify', isSelected: false },
-      ];
+      if(hideFilter === 'My Library'){
+        initialFilters = [
+          { label: 'My Library', isSelected: false, disabled: true }, 
+          { label: 'All of Spotify', isSelected: true },
+        ];
+      }else{
+        initialFilters = [
+          { label: 'My Library', isSelected: true }, 
+          { label: 'All of Spotify', isSelected: false },
+        ];
+      }
+
     }
     
     setFilters(initialFilters);
@@ -64,27 +72,27 @@ export default function Filter({ sendSearchFilterStatus, type, loading }) {
       }}
     >
       {list.map((filter, index) => (
-        <Button
-          key={index}
-          disabled={loading}
-          sx={{
-            flexGrow: 1,
-            flexBasis: 0, 
-            maxWidth: '150px', 
-            minWidth: '120px', 
-            height: '40px', 
-            display: 'flex',
-            color:'text.primary',
-            borderColor:'secondary.main',
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: filter.isSelected ? 'secondary.main' : 'secondary.light',
-            borderRadius: '50px'}}
-          startIcon={filter.icon}
-          onClick={() => handleFilterClick(index)}
-        >
-          {filter.label}
-        </Button>
+            <Button
+              key={index}
+              disabled={loading || filter.disabled}
+              sx={{
+                flexGrow: 1,
+                flexBasis: 0, 
+                maxWidth: '150px', 
+                minWidth: '120px', 
+                height: '40px', 
+                display: 'flex',
+                color:'text.primary',
+                borderColor:'secondary.main',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: filter.isSelected ? 'secondary.main' : 'secondary.light',
+                borderRadius: '50px'}}
+              startIcon={filter.icon}
+              onClick={() => handleFilterClick(index)}
+            >
+              {filter.label}
+            </Button>
       ))}
     </Box>
   );

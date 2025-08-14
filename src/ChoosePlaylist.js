@@ -7,7 +7,7 @@ import Preview from './Preview';
 import ReactGA from 'react-ga4';
 
 
-export default function ChoosePlaylist({sendStatus, sendChosenPlaylist}) {
+export default function ChoosePlaylist({sendStatus, sendChosenPlaylist, guestMode}) {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function ChoosePlaylist({sendStatus, sendChosenPlaylist}) {
     }}>
       
       {selectedPlaylist === null ? 
-        <Search sendItemSelected={handleSearchSelect}/>
+        <Search sendItemSelected={handleSearchSelect} guestMode={guestMode}/>
         :
         <Box sx={{
           display: 'flex',
