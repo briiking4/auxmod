@@ -9,6 +9,7 @@ import SaveComponent from './SaveComponent';
 import Done from './Done';
 import Login from './Login';
 import CleanPlaylist from './CleanPlaylist';
+import GuestWelcome from './GuestWelcome';
 import { setAccessToken } from './spotifyApi';
 import ReactGA from 'react-ga4';
 import posthog from 'posthog-js';
@@ -378,6 +379,7 @@ const handleOnboardingSubmit = (value) => {
       {
         guestMode ? 
          <>
+          <GuestWelcome></GuestWelcome>
           <Profile sendUserInfo={handleUserInfo} guestMode={guestMode}/>
 
           <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
