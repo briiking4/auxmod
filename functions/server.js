@@ -13,7 +13,8 @@ import {
   englishDataset,
   englishRecommendedTransformers,
   DataSet,
-  parseRawPattern
+  parseRawPattern,
+  pattern
 } from 'obscenity';
 import { spanishDataset, spanishEnglishBlacklistTransformers } from '../src/spanishDataset.js';
 import PQueue from 'p-queue';
@@ -227,15 +228,20 @@ async function getLyrics(songTitle, songArtist, track_isrc) {
 // Profanity checking function
 function checkProfanity(lyrics, whitelist = []) {
   console.log("whitelist: ", whitelist);
+  const normalizedWhitelist = whitelist.map((w) => w.toLowerCase());
+
   const defaultWhitelist = ['scat'];
 
   const myDataset = new DataSet()
     .addAll(englishDataset)
     .addAll(spanishDataset);
+  
+    const builtDataset = myDataset.build();
+
 
   // Remove phrases that match whitelist items
   myDataset.removePhrasesIf((phrase) => {
-    return whitelist.map(w => w.toLowerCase()).includes(phrase.metadata.originalWord.toLowerCase());
+    return normalizedWhitelist.map(w => w.toLowerCase()).includes(phrase.metadata.originalWord.toLowerCase());
   });
 
   const spanishWhitelist = [
@@ -246,8 +252,8 @@ function checkProfanity(lyrics, whitelist = []) {
 
   // Set up the matcher
   const matcher = new RegExpMatcher({
-    blacklistedTerms: myDataset.build().blacklistedTerms,
-    whitelistedTerms: [...whitelist, ...spanishWhitelist, ...defaultWhitelist],
+    blacklistedTerms: builtDataset.blacklistedTerms,
+    whitelistedTerms: [...normalizedWhitelist, ...spanishWhitelist, ...defaultWhitelist, ...builtDataset.whitelistedTerms],
     blacklistMatcherTransformers: spanishEnglishBlacklistTransformers,
   });
 
@@ -258,7 +264,7 @@ function checkProfanity(lyrics, whitelist = []) {
 
   // Handle whitelist matching
   if (whitelist && whitelist.length > 0) {
-    const listForWhitelistMatcher = whitelist.map((word, index) => ({
+    const listForWhitelistMatcher = normalizedWhitelist.map((word, index) => ({
       id: index,
       pattern: parseRawPattern(word),
       originalWord: word

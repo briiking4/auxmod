@@ -432,26 +432,36 @@ const handleOnboardingSubmit = (value) => {
               </>
               : <></>
             }
-            <Box 
+            <Box
               sx={{
-                mt: 'auto', 
+                mt: 'auto',
                 textAlign: 'left',
                 width: '100%',
-                display:'flex',
-                justifyContent:'space-between',
-                alignItems:'center'
+                display: 'flex',
+                flexDirection:'column',
+                pt:2
               }}
             >
-              <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
-             <Box >
-              <Button id="feedback-button" variant="contained" size="small">
-                Leave feedback
-              </Button>
-              
-             </Box>
+              <Box sx={{ display: 'flex', flexDirection:"row", gap: 1, justifyContent: 'end' }}>
+              <a
+                  href="https://www.buymeacoffee.com/brianakingt"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'inline-block' }}
+                >
+                  <img
+                    src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+                    alt="Buy Me A Coffee"
+                    style={{ height: '40px', width: '145px', display: 'block' }}
+                  />
+                </a>
+                <Button id="feedback-button" variant="contained" size="small" sx={{backgroundColor:'#E89D7A'}}>
+                  Leave feedback
+                </Button>
+              </Box>
+              <Typography variant="caption" sx={{mb:-2, alignSelf:'center'}}>© 2025 auXmod. Created by Briana King.</Typography>
             </Box>
-         
-         </>
+              </>
 
         :
         <>
@@ -515,23 +525,34 @@ const handleOnboardingSubmit = (value) => {
               </>
               : <></>
             }
-            <Box 
+            <Box
               sx={{
-                mt: 'auto', 
+                mt: 'auto',
                 textAlign: 'left',
                 width: '100%',
-                display:'flex',
-                justifyContent:'space-between',
-                alignItems:'center'
+                display: 'flex',
+                flexDirection:'column',
+                pt:2
               }}
             >
-              <Typography variant="caption">© 2025 auXmod. Created by Briana King.</Typography>
-             <Box >
-              <Button id="feedback-button" variant="contained" size="small">
-                Leave feedback
-              </Button>
-              
-             </Box>
+              <Box sx={{ display: 'flex', flexDirection:"row", gap: 1, justifyContent: 'end' }}>
+              <a
+                  href="https://www.buymeacoffee.com/brianakingt"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'inline-block' }}
+                >
+                  <img
+                    src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+                    alt="Buy Me A Coffee"
+                    style={{ height: '40px', width: '145px', display: 'block' }}
+                  />
+                </a>
+                <Button id="feedback-button" variant="contained" size="small" sx={{backgroundColor:'#E89D7A'}}>
+                  Leave feedback
+                </Button>
+              </Box>
+              <Typography variant="caption" sx={{mb:-2, alignSelf:'center'}}>© 2025 auXmod. Created by Briana King.</Typography>
             </Box>
           </>
         )}

@@ -284,10 +284,14 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
 
   const isCleanVersion = async (track) => {
     try {
-      const name = track.name.toLowerCase();
+      let localItemName = track.name.toLowerCase();
+      if (track.name.includes("-") && !track.name.toLowerCase().includes("- remix")) {
+        localItemName = track.name.substring(0, track.name.indexOf("-")).trim().toLowerCase();
+      }
+      
       const artist = track.artists[0].name.toLowerCase();
       
-      const query = `track:"${name.replace(/"/g, '')}" artist:"${artist.replace(/"/g, '')}"`;
+      const query = `track:"${localItemName.replace(/"/g, '')}" artist:"${artist.replace(/"/g, '')}"`;
       
       const searchResult = await rateLimitedApi.call(
         spotifyApi.search.bind(spotifyApi), 
@@ -299,7 +303,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       const explicitTrack = searchResult.tracks.items.find(item => {
         const itemName = item.name.toLowerCase();
         const itemArtists = item.artists.map(a => a.name.toLowerCase());
-        return item.explicit && itemArtists.includes(artist) && itemName === name;
+        return item.explicit && itemArtists.includes(artist) && itemName === localItemName;
       });
 
       if (explicitTrack) {
