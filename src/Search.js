@@ -133,6 +133,23 @@ export default function Search({ sendItemSelected, guestMode }) {
     return allPlaylists;
   }
 
+  function extractPlaylistId(query) {
+    const urlPattern = /(?:https?:\/\/open\.spotify\.com\/playlist\/|spotify:playlist:)([a-zA-Z0-9]+)/;
+    const match = query.match(urlPattern);
+    return match ? match[1] : null;
+  }
+
+  async function fetchPlaylistById(id) {
+    try {
+      const response = await spotifyApi.getPlaylist(id);
+      return response;
+    } catch (e) {
+      console.error("Error fetching playlist by ID:", e);
+      return null;
+    }
+  }
+    
+
   // Search all playlists in Spotify with pagination
   async function searchAllPlaylists(value, offset = 0, limit = ITEMS_PER_FETCH) {
     setIsLoading(true);
@@ -320,20 +337,37 @@ export default function Search({ sendItemSelected, guestMode }) {
     loadInitialData();
   }, [selectedFilter]);
 
-  // Handle search input with debounce
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    clearTimeout(debounceTimeout.current);
-    
-    debounceTimeout.current = setTimeout(() => {
-      if (selectedFilter === 'My Library') {
-        searchMyLibrary(query);
+ const handleSearchChange = (e) => {
+  const query = e.target.value.trim();
+  setSearchQuery(query);
+  clearTimeout(debounceTimeout.current);
+
+  const playlistId = extractPlaylistId(query);
+  if (playlistId) {
+    // Direct playlist lookup
+    fetchPlaylistById(playlistId).then(playlist => {
+      if (playlist) {
+        setSearchList([playlist]);
+        setTotalResults(1);
+        setHasMoreToFetch(false);
       } else {
-        searchAllOfSpotify(query, 0, false);
+        setSearchList([]);
+        setTotalResults(0);
       }
-    }, 500);
-  };
+    });
+    return;
+  }
+
+  // Normal text search with debounce
+  debounceTimeout.current = setTimeout(() => {
+    if (selectedFilter === 'My Library') {
+      searchMyLibrary(query);
+    } else {
+      searchAllOfSpotify(query, 0, false);
+    }
+  }, 500);
+};
+
   
   // Handle Show More button click
   const handleShowMore = async () => {
@@ -404,7 +438,7 @@ export default function Search({ sendItemSelected, guestMode }) {
       <Container sx={{ m: 'auto', display: 'flex', px: 0 }}>
         <TextField
           variant="outlined"
-          label="Search playlist name"
+          label="Search playlist by name or url"
           fullWidth
           value={searchQuery}
           onChange={handleSearchChange}

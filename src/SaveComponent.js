@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { Button, Box, Typography, IconButton, Snackbar, Alert} from '@mui/material';
+import { Button, Box, Typography, IconButton, Snackbar, Alert, Tooltip} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PreviewPlaylist from './PreviewPlaylist';
 import spotifyApi from './spotifyApi';
@@ -436,15 +436,19 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                 flexShrink: 0
               }}
             >
-              <Button
-                variant="contained"
-                sx={{ minWidth: '102px', borderRadius: '50px' }}
-                disabled={displayedTracks.length === 0 || guestMode}
-                loading={loading}
-                onClick={handleSave}
-              >
-                Save to Library
-              </Button>
+           <Tooltip title={guestMode ? 'Log in with Spotify to save playlist' : ''}>
+              <div>
+                <Button
+                  variant="contained"
+                  sx={{ minWidth: '102px', borderRadius: '50px' }}
+                  disabled={displayedTracks.length === 0 || guestMode}
+                  loading={loading}
+                  onClick={handleSave}
+                >
+                  Save to Library
+                </Button>
+              </div>
+            </Tooltip>
             </Box>
           )}
         </Box>

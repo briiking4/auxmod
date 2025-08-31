@@ -20,7 +20,7 @@ export default function Filter({ sendSearchFilterStatus, type, loading, hideFilt
     if (type === 'search') {
       if(hideFilter === 'My Library'){
         initialFilters = [
-          { label: 'My Library', isSelected: false, disabled: true }, 
+          { label: 'My Library', isSelected: false, disabled: true, tooltip: "Log in with Spotify to search your library"}, 
           { label: 'All of Spotify', isSelected: true },
         ];
       }else{
@@ -72,6 +72,8 @@ export default function Filter({ sendSearchFilterStatus, type, loading, hideFilt
       }}
     >
       {list.map((filter, index) => (
+        <Tooltip title={filter.tooltip}>
+          <div>
             <Button
               key={index}
               disabled={loading || filter.disabled}
@@ -93,6 +95,8 @@ export default function Filter({ sendSearchFilterStatus, type, loading, hideFilt
             >
               {filter.label}
             </Button>
+            </div>
+        </Tooltip>
       ))}
     </Box>
   );

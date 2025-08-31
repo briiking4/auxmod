@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Container, Typography, Button, Box, keyframes, TextField } from '@mui/material';
 // import logo from './logo.png';
 import logo from './auxmod_logo.svg';
+import spotifyLogo from './spotify-logo.png'
 import spotifyApi, {initGuestAccess} from './spotifyApi';
 
 export default function Login({ sendLoginStatus, sendAccessToken, sendGuestModeStatus }) {
@@ -125,12 +126,11 @@ export default function Login({ sendLoginStatus, sendAccessToken, sendGuestModeS
     }
   }, [state.token, sendAccessToken]);
 
-  // Update login status in parent component when loggedIn changes
+// Update login status in parent component when loggedIn changes
   useEffect(() => {
-    if (state.loggedIn) {
-      sendLoginStatus(true);
-    }
+    sendLoginStatus(state.loggedIn); 
   }, [state.loggedIn, sendLoginStatus]);
+
 
   // Update login status in parent component when userMode changes
 
@@ -252,8 +252,15 @@ export default function Login({ sendLoginStatus, sendAccessToken, sendGuestModeS
             <Box sx={{display: 'flex', flexDirection:'column'}}>
               <Button 
                 variant="contained" 
-                sx={{ width: '200px', minHeight: '42px'}}
-                href={`${process.env.REACT_APP_BACKEND_URL}/login`}    
+                sx={{ width: '230px', minHeight: '42px', backgroundColor: '#1ED760'}}
+                href={`${process.env.REACT_APP_BACKEND_URL}/login`}  
+                startIcon={
+                  <img 
+                    src={spotifyLogo} 
+                    alt="Spotify logo"
+                    style={{ width: 24, height: 24,}}
+                  />
+                }  
               >
                 Login with Spotify
               </Button>

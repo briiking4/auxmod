@@ -21,6 +21,7 @@ import { usePostHog } from 'posthog-js/react'
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 import OnboardingSurvey from './OnboardingSurvey';
 import PreviewPlaylist from './PreviewPlaylist';
+import { use } from 'react';
 
 // LEFT OFF: playlist_track_number carry over for find clean versions and tracks pull from cache too
 
@@ -183,12 +184,17 @@ const handleOnboardingSubmit = (value) => {
     }
   })
 
+
 }
 
   // Recieving logged in status from the Login Compt
 
   const handleLoginStatus= (state) =>{
+    console.log("login status", state)
     setLoggedIn(state);
+    if(state === false){
+      setGuestMode(false);
+    }
   }
 
   
@@ -380,7 +386,7 @@ const handleOnboardingSubmit = (value) => {
         guestMode ? 
          <>
           <GuestWelcome></GuestWelcome>
-          <Profile sendUserInfo={handleUserInfo} guestMode={guestMode}/>
+          <Profile sendLoginStatus={handleLoginStatus} sendUserInfo={handleUserInfo} guestMode={guestMode}/>
 
           <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
             {
@@ -466,7 +472,7 @@ const handleOnboardingSubmit = (value) => {
         :
         <>
 
-        <Profile sendUserInfo={handleUserInfo}/>
+        <Profile sendLoginStatus={handleLoginStatus} sendUserInfo={handleUserInfo}/>
         
         {loadingSurveys ? (
           <CircularProgress sx={{margin:'auto'}} /> 
