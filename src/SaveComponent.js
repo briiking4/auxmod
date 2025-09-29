@@ -363,7 +363,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               {
                 view === 'included' && (
                   <>
-                   <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>Some songs have an E tag even without explicit content. I scan 30% of lyrics and filter based on your selections. Feel free to remove any song that seems off.</Alert>
+                   <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>Still see E tags? Don't worry, we've scanned the lyrics according to your filters. Feel free to manually remove songs.</Alert>
 
                     <Box 
                       sx={{ 

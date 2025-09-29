@@ -186,37 +186,151 @@ app.post('/api/getPosthogUser', async (req, res) => {
 
 
 // Lyrics fetching function
-async function getLyrics(songTitle, songArtist, track_isrc) {
+async function getLyrics(songTitle, songArtists, albumName, duration) {
   try {
     // const encodedArtist = encodeURIComponent(songArtist);
     // const encodedTitle = encodeURIComponent(songTitle);
     // const url = `https://api.lyrics.ovh/v1/${encodedArtist}/${encodedTitle}`;
 
 
-    const encodedArtist = encodeURIComponent(songArtist);
+    const encodedArtist = encodeURIComponent(songArtists[0]);
     const encodedTitle = encodeURIComponent(songTitle);
+    const encodedAlbum = encodeURIComponent(albumName);
 
-
-    const url = `https://api.musixmatch.com/ws/1.1/track.lyrics.get?apikey=564d37f16aeeda836dfa71dde9556561&track_isrc=${track_isrc}`;
-    const options = {method: 'GET', body: undefined};
-
-    try {
-      const response = await fetch(url, options);
-      const data = await response.json();
-      console.log(data);
-      let lyrics = data.message.body.lyrics.lyrics_body;
+    console.log('duration', duration)
     
-      // Cut off everything starting from the first occurrence of '...'
-      const cutOffIndex = lyrics.indexOf('...');
-      if (cutOffIndex !== -1) {
-        lyrics = lyrics.slice(0, cutOffIndex).trim();
-      }
-    
-      console.log(lyrics);
-      return lyrics;
-    } catch (error) {
-      console.error(error);
+
+    const url = `https://lrclib.net/api/search?artist_name=${encodedArtist}&track_name=${encodedTitle}&album_name=${encodedAlbum}`
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const normalize = s => (
+      s == null ? '' :
+      String(s)
+      .replace(/[\[\]\(\)\{\}-]/g, ' ')  // replace brackets, parentheses, and dashes with space
+      .replace(/[^\w\s]/g, '')            // remove all other punctuation (commas, apostrophes, etc.)
+      .replace(/\s+/g, ' ')                      // collapse multiple spaces to one
+        .trim()                                    // remove leading/trailing space
+        .toLowerCase()
+    );
+
+    const matchesAllArtists = lyric =>
+      songArtists.every(artist => normalize(lyric.artistName).includes(normalize(artist)));
+
+    const matchesMainArtist = lyric =>
+      normalize(lyric.artistName).includes(normalize(songArtists[0]));
+
+    const roundDuration = d => Math.round(d);
+
+    console.log("rounded duration: ", roundDuration(duration))
+
+    const filterLyric = (lyric, durationCheck, artistCheck) => {
+      const roundedLyricDuration = roundDuration(lyric.duration);
+      const roundedTargetDuration = roundDuration(duration);
+
+      return (
+        durationCheck(roundedLyricDuration, roundedTargetDuration) &&
+        normalize(lyric.albumName) === normalize(albumName) &&
+        normalize(lyric.trackName) === normalize(songTitle) &&
+        artistCheck(lyric)
+      );
+    };
+
+
+    //finding the best lyrics match
+
+    // 1st try Exact duration, all artists
+    let filteredResult = data.find(lyric =>
+      filterLyric(lyric, (lyricDur, targetDur) => lyricDur === targetDur, matchesAllArtists)
+    );
+    if (filteredResult) console.log("Found in step 1: Exact duration + all artists");
+
+    // 2️nd try Exact duration, main artist only
+    if (!filteredResult) {
+      filteredResult = data.find(lyric =>
+        filterLyric(lyric, (lyricDur, targetDur) => lyricDur === targetDur, matchesMainArtist)
+      );
+      if (filteredResult) console.log("Found in step 2: Exact duration + main artist");
     }
+
+    // 3rd try ±2 seconds, all artists
+    if (!filteredResult) {
+      filteredResult = data.find(lyric =>
+        filterLyric(
+          lyric,
+          (lyricDur, targetDur) => Math.abs(lyricDur - targetDur) <= 2,
+          matchesAllArtists
+        )
+      );
+      if (filteredResult) console.log("Found in step 3: ±2 seconds + all artists");
+    }
+
+    // 4th try ±2 seconds, main artist only
+    if (!filteredResult) {
+      filteredResult = data.find(lyric =>
+        filterLyric(
+          lyric,
+          (lyricDur, targetDur) => Math.abs(lyricDur - targetDur) <= 2,
+          matchesMainArtist
+        )
+      );
+      if (filteredResult) console.log("Found in step 4: ±2 seconds + main artist");
+    }
+
+    // removing the duplicated lines from the lyrics
+
+    const removeDuplicateLines = str => {
+      const seen = new Set();
+      return str
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => {
+          // normalize for comparison
+          const key = line
+            .toLowerCase()
+            .replace(/[^\w\s]/g, '')  // strip punctuation
+            .replace(/\s+/g, ' ');    // collapse spaces
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .join('\n');
+    };
+    
+
+    let lyrics = removeDuplicateLines(filteredResult.plainLyrics)
+
+    console.log("Lyrics: ", lyrics)
+
+
+    return lyrics;
+
+
+
+
+
+
+    // const url = `https://api.musixmatch.com/ws/1.1/track.lyrics.get?apikey=564d37f16aeeda836dfa71dde9556561&track_isrc=${track_isrc}`;
+    // const options = {method: 'GET', body: undefined};
+
+    // try {
+    //   const response = await fetch(url, options);
+    //   const data = await response.json();
+    //   console.log(data);
+    //   let lyrics = data.message.body.lyrics.lyrics_body;
+    
+    //   // Cut off everything starting from the first occurrence of '...'
+    //   const cutOffIndex = lyrics.indexOf('...');
+    //   if (cutOffIndex !== -1) {
+    //     lyrics = lyrics.slice(0, cutOffIndex).trim();
+    //   }
+    
+    //   console.log(lyrics);
+    //   return lyrics;
+    // } catch (error) {
+    //   console.error(error);
+    // }
     
 
   } catch (error) {
@@ -227,7 +341,6 @@ async function getLyrics(songTitle, songArtist, track_isrc) {
 
 // Profanity checking function
 function checkProfanity(lyrics, whitelist = []) {
-  console.log("whitelist: ", whitelist);
   const normalizedWhitelist = whitelist.map((w) => w.toLowerCase());
 
   const defaultWhitelist = ['scat'];
@@ -324,75 +437,77 @@ function checkProfanity(lyrics, whitelist = []) {
 }
 
 // Main analyze song endpoint
-app.post('/api/analyze-song', async (req, res) => {
-  const { songTitle, songArtist, chosenFilters } = req.body;
+// app.post('/api/analyze-song', async (req, res) => {
+//   const { songTitle, songArtist, chosenFilters } = req.body;
 
-  if (!songTitle || !songArtist) {
-    return res.status(400).json({ error: 'Missing songTitle or songArtist' });
-  }
+//   if (!songTitle || !songArtist) {
+//     return res.status(400).json({ error: 'Missing songTitle or songArtist' });
+//   }
 
-  try {
-    console.log(`Analyzing song: ${songTitle} by ${songArtist}`);
+//   try {
+//     console.log(`Analyzing song: ${songTitle} by ${songArtist}`);
     
-    // Get lyrics first
-    const lyrics = await getLyrics(songTitle, songArtist);
+//     // Get lyrics first
+//     const lyrics = await getLyrics(songTitle, songArtist);
+
+//     console.log("lyrics returned from getLyrics: ", lyrics)
     
-    if (!lyrics || lyrics.trim() === '') {
-      console.warn("No lyrics found. Skipping analysis.");
-      return res.json({ 
-        status: 'no-lyrics', 
-        lyrics: null,
-        sexually_explicit: null, 
-        profanity: null, 
-        violence: null 
-      });
-    }
+//     if (!lyrics || lyrics.trim() === '') {
+//       console.warn("No lyrics found. Skipping analysis.");
+//       return res.json({ 
+//         status: 'no-lyrics', 
+//         lyrics: null,
+//         sexually_explicit: null, 
+//         profanity: null, 
+//         violence: null 
+//       });
+//     }
 
-    // Extract filter settings and run checks accordingly 
-    const profanityFilter = chosenFilters?.find(filter => filter.label === "Profanity");
-    const violenceFilter = chosenFilters?.find(filter => filter.label === "Violence");
-    const sexualFilter = chosenFilters?.find(filter => filter.label === "Sexual");
+//     // Extract filter settings and run checks accordingly 
+//     const profanityFilter = chosenFilters?.find(filter => filter.label === "Profanity");
+//     const violenceFilter = chosenFilters?.find(filter => filter.label === "Violence");
+//     const sexualFilter = chosenFilters?.find(filter => filter.label === "Sexual");
     
-    const shouldCheckProfanity = !!profanityFilter;
-    const shouldCheckModeration = !!(violenceFilter || sexualFilter);
-    const whitelist = profanityFilter?.options?.whitelist || [];
+//     const shouldCheckProfanity = !!profanityFilter;
+//     const shouldCheckModeration = !!(violenceFilter || sexualFilter);
+//     const whitelist = profanityFilter?.options?.whitelist || [];
 
-    const [themeModeration, profanityResult] = await Promise.all([
-      shouldCheckModeration ? checkModerationBatch(lyrics) : Promise.resolve({ sexual: null, violence: null, status: 'success' }),
-      shouldCheckProfanity ? checkProfanity(lyrics, whitelist) : Promise.resolve(null)
-    ]);
+//     const [themeModeration, profanityResult] = await Promise.all([
+//       shouldCheckModeration ? checkModerationBatch(lyrics) : Promise.resolve({ sexual: null, violence: null, status: 'success' }),
+//       shouldCheckProfanity ? checkProfanity(lyrics, whitelist) : Promise.resolve(null)
+//     ]);
 
-    console.log("Analysis complete");
+//     console.log("Analysis complete");
     
-    // Return comprehensive results
-    res.json({
-      status: themeModeration.status,
-      lyrics: lyrics,
-      sexually_explicit: themeModeration.sexual,
-      profanity: profanityResult,
-      violence: themeModeration.violence,
-    });
+//     // Return comprehensive results
+//     res.json({
+//       status: themeModeration.status,
+//       lyrics: lyrics,
+//       sexually_explicit: themeModeration.sexual,
+//       profanity: profanityResult,
+//       violence: themeModeration.violence,
+//     });
 
-  } catch (error) {
-    console.error("Error analyzing song:", error);
+//   } catch (error) {
+//     console.error("Error analyzing song:", error);
     
-    // Handle specific error cases
-    if (error.message.includes('No lyrics found')) {
-      return res.json({
-        status: 'no-lyrics',
-        lyrics: null,
-        sexually_explicit: null,
-        profanity: null,
-        violence: null
-      });
-    }
+//     // Handle specific error cases
+//     if (error.message.includes('No lyrics found')) {
+//       return res.json({
+//         status: 'no-lyrics',
+//         lyrics: null,
+//         sexually_explicit: null,
+//         profanity: null,
+//         violence: null
+//       });
+//     }
 
-    res.status(500).json({
-      error: 'Failed to analyze song',
-      details: error.message
-    });
-  }
-});
+//     res.status(500).json({
+//       error: 'Failed to analyze song',
+//       details: error.message
+//     });
+//   }
+// });
 
 const TOKEN_LIMIT = 10000; // TPM from OpenAI
 const REFILL_INTERVAL_MS = 1000; //
@@ -484,8 +599,8 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
   }
 
   for (const song of songs) {
-    if (!song.songTitle || !song.songArtist) {
-      return res.status(400).json({ error: 'Each song must have songTitle and songArtist' });
+    if (!song.songTitle || !song.songArtists) {
+      return res.status(400).json({ error: 'Each song must have songTitle and songArtists' });
     }
   }
 
@@ -496,15 +611,14 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
       songs.map(async (song, index) => {
         try {
           console.log("SONG TITLE FROM REQ:", song.songTitle)
-          console.log("SONG ARTIST FROM REQ:", song.songArtist)
+          console.log("SONG ARTIST FROM REQ:", song.songArtists)
           console.log("SONG ISRC FROM REQ:", song.songIsrc)
 
 
-
-          const lyrics = await getLyrics(song.songTitle, song.songArtist, song.songIsrc);
+          const lyrics = await getLyrics(song.songTitle, song.songArtists, song.songAlbum, song.songDuration);
           return { index, song, lyrics: lyrics?.trim() ? lyrics : null, error: null };
         } catch (error) {
-          console.warn(`Failed to get lyrics for ${song.songTitle} by ${song.songArtist}:`, error.message);
+          console.warn(`Failed to get lyrics for ${song.songTitle} by ${song.songArtists[0]}:`, error.message);
           return { index, song, lyrics: null, error: error.message };
         }
       })
@@ -527,12 +641,13 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
     const analysisResults = new Array(songs.length);
     
     if (songsWithLyrics.length > 0) {
+
+      const lyricsArray = songsWithLyrics.map(s => s.lyrics);
+
       let moderationResults = [];
       if (shouldCheckModeration) {
         console.log(`Running moderation checks for ${songsWithLyrics.length} songs`);
-        const lyricsArray = songsWithLyrics.map(s => s.lyrics);
         
-        // THIS IS THE KEY FIX: Properly batch the moderation calls
         moderationResults = await checkModerationBatch(lyricsArray);
         console.log(`Moderation complete for ${moderationResults.length} songs`);
       }
@@ -540,7 +655,7 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
       // Process profanity checks in parallel
       const profanityResults = [];
       if (shouldCheckProfanity) {
-        const profanityPromises = songsWithLyrics.map(({ lyrics }) => {
+        const profanityPromises = lyricsArray.map(lyrics => {
           return Promise.resolve().then(() => checkProfanity(lyrics, whitelist)).catch(error => {
             console.error(`Profanity check failed:`, error.message);
             return null;

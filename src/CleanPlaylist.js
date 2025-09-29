@@ -176,14 +176,17 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         const chunkStart = Date.now();
   
         const songs = chunk.map(trackItem => {
-          let localItemName = trackItem.track.name;
-          if (trackItem.track.name.includes("-") && !trackItem.track.name.includes("- Remix")) {
-            localItemName = trackItem.track.name.substring(0, trackItem.track.name.indexOf("-")).trim();
-          }
+          let localItemName = trackItem.track.name.replace(/\s*-\s*(radio edit|version|mix|edit|remaster|acoustic|live|instrumental|single).*$/i, '').trim();
+
+          let duration = trackItem.track.duration_ms / 1000
+
+          let artists = trackItem.track.artists.map(a => a.name)
+
           return {
             songTitle: localItemName,
-            songArtist: trackItem.track.artists[0].name,
-            songIsrc: trackItem.track.external_ids.isrc
+            songArtists: artists,
+            songAlbum:  trackItem.track.album.name,
+            songDuration: duration
           };
         });
   
