@@ -198,6 +198,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   
           const cleanCheckLimit = pLimit(2);
           const classifyLimit = pLimit(8);
+
+          console.log("CHUNK RESULTS", chunkResults)
   
           const classifiedResults = await Promise.all(chunkResults.map((item, index) =>
             classifyLimit(async () => {
@@ -225,13 +227,19 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
                   track.reason.push("Error");
                   return { type: 'explicit', track };
                 } else {
-                  track.reason.push("No score");
-                  failedFilter = true;
+                  if(item && item.status === 'instrumental'){
+                    track.trackAnalysis = item;
+                    track.reason.push("Instrumental");
+                    failedFilter = false;
+                  }else{
+                    track.reason.push("No score");
+                    failedFilter = true;
+                  }
                 }
               }
   
               if (failedFilter) {
-                if ((track.reason.length === 1) && (track.reason[0] === "Profanity")) {
+                if ((track.reason.length === 1) && (track.reason[0] === "Profanity") && (track.trackAnalysis.profanity?.customBlacklistedWordsFound.length === 0)) {
                   if (track.explicit) {
                     return { type: 'needs-clean-search', track };
                   }
@@ -253,6 +261,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
               }
             })
           ));
+
+          console.log("CLASSIFIED RESULTS: ", classifiedResults)
   
           for (const result of classifiedResults) {
             if (result.type === 'clean') {

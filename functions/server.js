@@ -297,17 +297,15 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
         })
         .join('\n');
     };
-    
-
-    let lyrics = removeDuplicateLines(filteredResult.plainLyrics)
-
-    console.log("Lyrics: ", lyrics)
 
 
-    return lyrics;
-
-
-
+    if(filteredResult.instrumental){
+      console.log("song is instrumental", filteredResult)
+      return "instrumental"
+    }else{
+      let lyrics = removeDuplicateLines(filteredResult.plainLyrics)
+      return lyrics
+    }
 
 
 
@@ -340,22 +338,35 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
 }
 
 // Profanity checking function
-function checkProfanity(lyrics, whitelist = []) {
+function checkProfanity(lyrics, whitelist = [], blacklist = []) {
+  console.log("Blacklist", blacklist)
   const normalizedWhitelist = whitelist.map((w) => w.toLowerCase());
+  const normalizedBlacklist = blacklist.map((w) => w.toLowerCase());
+
 
   const defaultWhitelist = ['scat'];
 
   const myDataset = new DataSet()
     .addAll(englishDataset)
     .addAll(spanishDataset);
-  
-    const builtDataset = myDataset.build();
 
 
-  // Remove phrases that match whitelist items
+      // Remove phrases that match whitelist items
   myDataset.removePhrasesIf((phrase) => {
     return normalizedWhitelist.map(w => w.toLowerCase()).includes(phrase.metadata.originalWord.toLowerCase());
   });
+
+  // adding in custom blacklist words
+  normalizedBlacklist.forEach((word) => {
+    myDataset.addPhrase((phrase) =>
+      phrase
+        .setMetadata({ originalWord: word, customBlacklist: true })
+        .addPattern(pattern`${word}`)
+    );
+  });
+  
+  const builtDataset = myDataset.build();
+
 
   const spanishWhitelist = [
     'cumpleaños', 'cumplido', 'cumplir',
@@ -372,6 +383,7 @@ function checkProfanity(lyrics, whitelist = []) {
 
   const whitelistWordsFound = new Set();
   const blacklistedWordsFound = new Set();
+  const customBlacklistedWordsFound = new Set();
   const whitelistWordCountOccurrences = {};
   const blacklistWordCountOccurrences = {};
 
@@ -402,6 +414,7 @@ function checkProfanity(lyrics, whitelist = []) {
       whitelistedWordsFound: [],
       whitelistOccurrences: {},
       blacklistedWordsFound: [],
+      customBlacklistedWordsFound: [],
       blacklistOccurrences: {}
     };
   }
@@ -412,9 +425,17 @@ function checkProfanity(lyrics, whitelist = []) {
     const blacklistMatchesMeta = blacklistMatches.map(myDataset.getPayloadWithPhraseMetadata.bind(myDataset));
 
     blacklistMatchesMeta.forEach((word) => {
-      blacklistedWordsFound.add(word.phraseMetadata.originalWord);
-      blacklistWordCountOccurrences[word.phraseMetadata.originalWord] = 
-        (blacklistWordCountOccurrences[word.phraseMetadata.originalWord] || 0) + 1;
+      if(word.phraseMetadata.customBlacklist){
+        customBlacklistedWordsFound.add(word.phraseMetadata.originalWord);
+        blacklistWordCountOccurrences[word.phraseMetadata.originalWord] = 
+          (blacklistWordCountOccurrences[word.phraseMetadata.originalWord] || 0) + 1;
+      }else{
+        blacklistedWordsFound.add(word.phraseMetadata.originalWord);
+        blacklistWordCountOccurrences[word.phraseMetadata.originalWord] = 
+          (blacklistWordCountOccurrences[word.phraseMetadata.originalWord] || 0) + 1;
+
+      }
+
     });
 
     return {
@@ -422,6 +443,7 @@ function checkProfanity(lyrics, whitelist = []) {
       whitelistedWordsFound: Array.from(whitelistWordsFound),
       whitelistOccurrences: whitelistWordCountOccurrences,
       blacklistedWordsFound: Array.from(blacklistedWordsFound),
+      customBlacklistedWordsFound: Array.from(customBlacklistedWordsFound),
       blacklistOccurrences: blacklistWordCountOccurrences
     };
   } else {
@@ -431,6 +453,7 @@ function checkProfanity(lyrics, whitelist = []) {
       whitelistedWordsFound: Array.from(whitelistWordsFound),
       whitelistOccurrences: whitelistWordCountOccurrences,
       blacklistedWordsFound: Array.from(blacklistedWordsFound),
+      customBlacklistedWordsFound: Array.from(customBlacklistedWordsFound),
       blacklistOccurrences: blacklistWordCountOccurrences
     };
   }
@@ -634,9 +657,13 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
     const shouldCheckProfanity = !!profanityFilter;
     const shouldCheckModeration = !!(violenceFilter || sexualFilter);
     const whitelist = profanityFilter?.options?.whitelist || [];
+    const blacklist = profanityFilter?.options?.blacklist || [];
 
-    const songsWithLyrics = lyricsResults.filter(result => result.lyrics);
+
+    const songsWithLyrics = lyricsResults.filter(result => result.lyrics && result.lyrics !== "instrumental");
     const songsWithoutLyrics = lyricsResults.filter(result => !result.lyrics);
+    const songsInstrumental= lyricsResults.filter(result => result.lyrics === "instrumental");
+
 
     const analysisResults = new Array(songs.length);
     
@@ -656,7 +683,7 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
       const profanityResults = [];
       if (shouldCheckProfanity) {
         const profanityPromises = lyricsArray.map(lyrics => {
-          return Promise.resolve().then(() => checkProfanity(lyrics, whitelist)).catch(error => {
+          return Promise.resolve().then(() => checkProfanity(lyrics, whitelist, blacklist)).catch(error => {
             console.error(`Profanity check failed:`, error.message);
             return null;
           });
@@ -694,6 +721,16 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
       };
     });
 
+    songsInstrumental.forEach(({ index, song }) => {
+      analysisResults[index] = {
+        status: 'instrumental',
+        lyrics: null,
+        sexually_explicit: null,
+        profanity: null,
+        violence: null,
+      };
+    });
+    
     console.log(`Chunk analysis complete for ${songs.length} songs`);
     
     res.json({

@@ -7,7 +7,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ClearIcon from '@mui/icons-material/Clear';
 
 
-export default function AdvancedFilters({ sendWhitelist, loading, filtersState, sendSettingsApplied }) {
+export default function AdvancedFilters({ sendWhitelist, sendBlacklist, loading, filtersState, sendSettingsApplied }) {
 
 
   const profanityIcon = 
@@ -23,7 +23,9 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
 
   const [profanityOpen, setProfanityOpen] = useState(false)
   const [whitelist, setWhitelist] = useState([])
-  const [inputValue, setInputValue] = useState("")
+  const [blacklist, setBlacklist] = useState([])
+  const [blacklistInputValue, setBlacklistInputValue] = useState("")
+  const [whitelistInputValue, setWhitelistInputValue] = useState("")
   const [snackbarOpen, setSnackbar ] = useState(false);
   const [toolTipOpen, setTooltipOpen] = React.useState(false);
 
@@ -51,18 +53,36 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
 
     const handleSubmit = (event) => {
 
-      const value = inputValue.trim()
+      const value = whitelistInputValue.trim()
         event.preventDefault();
         if (value && !whitelist.includes(value)) {
-          setWhitelist([...whitelist, inputValue.trim()]);
-          setInputValue('')
+          setWhitelist([...whitelist, whitelistInputValue.trim()]);
+          setWhitelistInputValue('')
         }
+    }
+
+    const handleBlacklistSubmit = (event) => {
+      const value = blacklistInputValue.trim()
+      event.preventDefault();
+      if (value && !blacklist.includes(value)) {
+        setBlacklist([...blacklist, blacklistInputValue.trim()]);
+        setBlacklistInputValue('')
+      }
+    }
+
+    const handleBlacklistClear = (index) => {
+      console.log("Clear blacklist clicked")
+      const newBlacklist = [...blacklist];
+      newBlacklist.splice(index, 1);
+      setBlacklist(newBlacklist);
     }
 
     const handleCancel = () =>{
       setWhitelist([]);
+      setBlacklist([]);
       setProfanityOpen(false);
     }
+
 
     const handleClear = (index) =>{
       console.log("Clear clicked")
@@ -72,12 +92,14 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
     }
 
     const handleConfirm = () => {
-      console.log("confirmed - set whitelist")
+      console.log("confirmed - set whitelist and blacklist")
       sendWhitelist(whitelist);
+      sendBlacklist(blacklist);
       setProfanityOpen(false);
       sendSettingsApplied(true);
       setSnackbar(true);
     }
+
 
 
   const handleSnackbarClose = (event, reason) => {
@@ -155,12 +177,14 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
               </Box>
             </AccordionSummary>
             <AccordionDetails>
+             {/* whitelist Section */}
+
               <Box sx={{display:"flex", flexDirection:'column' }}>
                 <Typography fontWeight='bold' >
                   Allow specific words:
                 </Typography>
                 <Typography fontStyle='italic' variant='caption' >
-                (Whitelist words <b>that you feel are OKAY</b> and should not be flagged by the profanity filter. ) 
+                (Profanity you consider OKAY — <b>won’t be flagged by the filter</b>.)
                 </Typography>
               <Box sx={{display:'flex', flexDirection:'row', mt:1}}>
                 <form onSubmit={handleSubmit}>
@@ -168,8 +192,8 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
                   id="filled-basic" 
                   label="Word" 
                   variant="filled" 
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  value={whitelistInputValue}
+                  onChange={(e) => setWhitelistInputValue(e.target.value)}
                   />
                 </form>
                 <Button onClick={handleSubmit}>Add</Button>
@@ -214,6 +238,36 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
                 <Typography variant='caption' sx={{fontStyle:'italic'}}>warning: contains profane language</Typography>
               </Box>
 
+          {/* Blacklist Section */}
+              <Box sx={{display:"flex", flexDirection:'column', mt: 3 }}>
+                <Typography fontWeight='bold' >
+                  Block specific words:
+                </Typography>
+                <Typography fontStyle='italic' variant='caption' >
+                (Add extra words to block <b>on top of the standard profanity filter</b>.)
+                </Typography>
+              <Box sx={{display:'flex', flexDirection:'row', mt:1}}>
+                <form onSubmit={handleBlacklistSubmit}>
+                  <TextField                      
+                  id="blacklist-input" 
+                  label="Word" 
+                  variant="filled" 
+                  value={blacklistInputValue}
+                  onChange={(e) => setBlacklistInputValue(e.target.value)}
+                  />
+                </form>
+                <Button onClick={handleBlacklistSubmit}>Add</Button>
+                </Box>
+                <Box sx={{display:'flex', flexDirection:'row', gap:2,mt:1}}>
+                  {blacklist.map((word, index) => (
+                  <Button key={index} variant="outlined" startIcon={<ClearIcon />} onClick={() => handleBlacklistClear(index)}>
+                  {word}
+                  </Button>
+
+                ))}
+                </Box>
+              </Box>
+
             </AccordionDetails>
             <AccordionActions>
               <Button onClick={handleCancel}>Cancel</Button>
@@ -223,7 +277,7 @@ export default function AdvancedFilters({ sendWhitelist, loading, filtersState, 
           <Snackbar
             open={snackbarOpen}
             autoHideDuration={5000}
-            message="Whitelist has been set."
+            message="Profanity settings updated."
             onClose={handleSnackbarClose}
             sx={{maxWidth:'200px'}}
           />

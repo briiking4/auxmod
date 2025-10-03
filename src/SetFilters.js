@@ -97,6 +97,24 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
       };
     });
   };
+
+  const handleBlacklist = (list) => {
+    console.log("handling blacklist in setFilters", list)
+    setFilterState(prevState => {
+      if (!prevState.profanity) return prevState;
+      
+      return {
+        ...prevState,
+        profanity: {
+          ...prevState.profanity,
+          options: {
+            ...prevState.profanity.options,
+            blacklist: list
+          }
+        }
+      };
+    });
+  };
   
   // Group filters by category and placement
   const getCategoryFilters = (categoryId) => {
@@ -118,17 +136,6 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
         <meta name="description" content="Customize playlist filters to block profanity, sexual content, or violence from playlist. Automatically finds clean versions and set your own word whitelist." />
       </Helmet>
     <Container sx={{ mt: 2, p: 0 }}>
-      <Box sx={{ mt: -3 }}>
-        <IconButton
-          aria-label="back"
-          size="large"
-          onClick={() => sendStatus(false)}
-          sx={{ p: 0, mb: 2 }}
-          disabled={loading}
-        >
-          <ArrowBackIcon sx={{ p: 0 }} fontSize="inherit" />
-        </IconButton>
-      </Box>
       
       {/* Render filter categories by their placement and order */}
       {sortedCategories.map(category => (
@@ -145,6 +152,7 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
           category.id === 'moderation' && 
           <AdvancedFilters 
           sendWhitelist={handleWhitelist} 
+          sendBlacklist={handleBlacklist} 
           filtersState={Object.values(filterState)} 
           loading={loading} 
           sendSettingsApplied={setSettingsApplied}

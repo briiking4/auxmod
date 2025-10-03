@@ -47,19 +47,6 @@ export default function ChoosePlaylist({sendStatus, sendChosenPlaylist, guestMod
           height: '100%',
           overflow: 'hidden'
         }}>
-          {/* Back Button to Go back to Search */}
-          <Box>
-            <IconButton
-              aria-label="back"
-              size="large"
-              sx={{justifyContent:'start', p:0, flexShrink: 0}}
-              onClick={() => {
-                setSelectedPlaylist(null);
-              }}
-            >
-              <ArrowBackIcon sx={{ p: 0, mb: 1}} fontSize="inherit" />
-            </IconButton>
-          </Box>
 
           {/* Preview the playlist that was selected. (Preview comp takes the emaining height) */}
           <Box sx={{ flex: 1, overflow: 'hidden' }}>

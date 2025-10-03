@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
-import { Container, Typography, Button, Box, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
+import { Container, Typography, Button, Box, Dialog, DialogTitle, DialogContent, IconButton, Card, CardMedia } from '@mui/material';
 import logo from './auxmod_logo.svg';
 import display_1 from './display_1.svg';
 import display_2 from './display_2.svg';
@@ -9,6 +9,7 @@ import cloud from './cloud.svg';
 import CloseIcon from '@mui/icons-material/Close';
 import EmailIcon from '@mui/icons-material/Email';
 import PersonIcon from '@mui/icons-material/Person';
+import demo from './auXmodDemo.mov';
 
 const LandingDesktop = () => {
   const [open, setOpen] = React.useState(false);
@@ -115,7 +116,7 @@ const LandingDesktop = () => {
               backgroundColor: 'secondary.main',
             }}
           >
-            Try now!
+            Get Started!
           </Button>
 
           <Button 
@@ -226,18 +227,64 @@ const LandingDesktop = () => {
         sx={{
           position: 'absolute',
           top: '50%',
-          right: '-25%',
+          right: '100%',
           width: '70vw',
           height: '70vw',
           transform: 'translateY(-50%)',
           borderRadius: '50%',
           background: 'linear-gradient(180deg, #fceabb, #FFD8A8)',
           zIndex: 0,
+          animation: 'slideIn 2s ease-out forwards',
+          '@keyframes slideIn': {
+            from: {
+              right: '-100%',
+            },
+            to: {
+              right: '-25%',
+            }
+          },
+          '@-webkit-keyframes slideIn': {
+            from: {
+              right: '-100%',
+            },
+            to: {
+              right: '-25%',
+            }
+          }
         }}
-      />
+      >
+        <Box 
+          sx={{
+            position: 'absolute',
+            left: '25%',
+            top:'15%',
+            // transform: 'translateY(-50%)',
+            // height: '60vh',
+            zIndex: 1,
+            display: 'block',
+
+          }}
+        >
+
+          
+          {/* <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+            <iframe
+              src="https://uber-koel.clueso.site/embed/f13c6ad5-fe8e-43c8-9dca-9d127df565f2"
+              frameBorder="0"
+              allow="fullscreen"
+              webkitallowfullscreen="true"
+              mozallowfullscreen="true"
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+              title="Embedded Player"
+            ></iframe>
+          </div> */}
+        </Box>
+
+      </Box>
+
 
       {/* Display images */}
-      <Box 
+      {/* <Box 
         sx={{
           position: 'absolute',
           top: '50%',
@@ -250,7 +297,6 @@ const LandingDesktop = () => {
           pointerEvents: 'none'
         }}
       >
-        {/* Container for the overlapping images */}
         <Box
           sx={{
             position: 'relative',
@@ -258,7 +304,6 @@ const LandingDesktop = () => {
             height: '100%',
           }}
         >
-          {/* smaller display (display_1) */}
           <Box
             sx={{
               position: 'absolute',
@@ -281,7 +326,6 @@ const LandingDesktop = () => {
               }}
             />
           </Box>
-          {/* larger display (display_2) */}
           <Box
             sx={{
               position: 'absolute',
@@ -305,7 +349,10 @@ const LandingDesktop = () => {
             />
           </Box>
         </Box>
-      </Box>
+      </Box> */}
+      
+
+
 
       <Box 
         sx={{

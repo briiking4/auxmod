@@ -15,6 +15,8 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import ErrorIcon from '@mui/icons-material/Error';
 import MusicOffIcon from '@mui/icons-material/MusicOff';
+import BlockIcon from '@mui/icons-material/Block';
+
 
 
 import SoapIcon from '@mui/icons-material/Soap';
@@ -236,28 +238,24 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
       overflow: 'hidden'
     }}>
       {/* Header Section */}
-      <Box sx={{ flexShrink: 0 }}>
-        {/* Back Button */}
-        <IconButton
-          aria-label="back"
-          size="large"
-          onClick={() => sendStepStatus(false)}
-          sx={{ p: 0, mb: 1 }}
-        >
-          <ArrowBackIcon fontSize="inherit" />
-        </IconButton>
+      <Box sx={{ display: 'flex', flexDirection: 'row', flexShrink: 0}}>
+        
+        <Box sx={{display:'flex', flexDirection:'column'}}>
 
-        <Box sx={{display:'flex', flexDirection:'row', alignItems:'center'}}>
-          <Typography variant="h6">{cleanedPlaylist?.name} </Typography>
+          <Box sx={{display:'flex', flexDirection:'row', alignItems:'center'}}>
+            <Typography variant="h6">{cleanedPlaylist?.name} </Typography>
 
-          <FiberManualRecordIcon sx={{fontSize:'10px', mx:1}}/>
+            <FiberManualRecordIcon sx={{fontSize:'10px', mx:1}}/>
 
-          <Typography variant="caption">
-            {(localCleanedPlaylist?.tracksAdded.length) + " songs"}
-          </Typography>
+            <Typography variant="caption">
+              {(localCleanedPlaylist?.tracksAdded.length) + " songs"}
+            </Typography>
+
+          </Box>
+
+          <Typography variant="caption">Filters: {chosenFilters.join(', ')}</Typography>
 
         </Box>
-        <Typography variant="caption">Filters: {chosenFilters.join(', ')}</Typography>
 
       </Box>
 
@@ -347,7 +345,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                         { icon: <LocalFireDepartmentIcon />, label: 'Sexual' },
                       ]
                       .filter(item => chosenFilters.includes(item.label)) // Show only chosen filters
-                      .concat([{ icon: <MusicOffIcon />, label: 'No lyrics' },{ icon: <ErrorIcon />, label: 'Error' } ]) // Always include this
+                      .concat([{ icon: <MusicOffIcon />, label: 'No lyrics' },{ icon: <BlockIcon />, label: 'Blocked word' } ]) // Always include this
                       .map((item, index) => (
                         <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
                           <IconButton size="small" disabled>

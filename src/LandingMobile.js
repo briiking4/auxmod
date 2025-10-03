@@ -90,7 +90,7 @@ const LandingMobile = () => {
                     backgroundColor: 'secondary.main',
                     }}
                 >
-                    Try now!
+                    Get Started!
                 </Button>
 
                 <Button 
@@ -214,7 +214,7 @@ const LandingMobile = () => {
                 </Box>
                 <Box sx={{display:'flex', flexDirection:'column'}}>
                     <Typography variant='h6'> Families & Professionals </Typography>
-                    <Typography variant='caption'> Keep music safe around professionals, children, etc.</Typography>
+                    <Typography variant='caption'> Keep music safe around children, professionals, etc.</Typography>
                 </Box>
 
             </Box>

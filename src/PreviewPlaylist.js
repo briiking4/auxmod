@@ -29,6 +29,7 @@ import SoapIcon from '@mui/icons-material/Soap';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import ErrorIcon from '@mui/icons-material/Error';
+import BlockIcon from '@mui/icons-material/Block';
 
 
 import ProfanityIcon from './ProfanityIcon';
@@ -204,7 +205,8 @@ useEffect(() => {
           flex: 1, // Take up available space
           overflow: "auto",
           display: "flex",
-          flexDirection: "column"
+          flexDirection: "column",
+          backgroundColor: '#ebebeb'
         }}
       >
         <Table aria-label="simple table"
@@ -315,19 +317,27 @@ useEffect(() => {
                   {/* Show reason only if the view is "excluded" */}
                   {(view === "excluded" || view=== "included") && (
                     <>
-                      <TableCell align="right" sx={{width:'25%'}}>
+                      <TableCell align="right" sx={{width:'25%'}} >
                         <Box sx={{
                           display: 'flex',
                           justifyContent: view === "included" ? 'center' : 'flex-start',
                           alignItems: 'center',
                           height: '100%'
                         }}>
-                          {track.reason && track.reason.includes('Profanity') && (
+                          {track.reason && track.reason.includes('Profanity') && (track.trackAnalysis.profanity.blacklistedWordsFound?.length > 0) && (
                             <Tooltip title={`Profanity: ${track.trackAnalysis.profanity.blacklistedWordsFound?.map(redactWord).join(', ')}`}
                               enterTouchDelay={0} 
                               leaveTouchDelay={3000}
                             >
                               <span style={{marginLeft: '4px'}}><ProfanityIcon/></span>
+                            </Tooltip>
+                          )}
+                           {track.reason && track.reason.includes('Profanity') && (track.trackAnalysis.profanity.customBlacklistedWordsFound?.length > 0) && (
+                            <Tooltip title={`Blocked word: ${track.trackAnalysis.profanity.customBlacklistedWordsFound?.join(', ')}`}
+                              enterTouchDelay={0} 
+                              leaveTouchDelay={3000}
+                            >
+                              <span style={{marginLeft: '4px'}}><BlockIcon/></span>
                             </Tooltip>
                           )}
                           {track.reason && track.reason.includes('Violence') && (
@@ -388,7 +398,7 @@ useEffect(() => {
                               <span style={{marginLeft: '4px'}}><FactCheckIcon/></span>
                             </Tooltip>
                           )}
-
+                          
                         </Box>
                       </TableCell>
                       <TableCell align="center" sx={{width:'20%'}}>

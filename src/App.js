@@ -307,7 +307,20 @@ const handleOnboardingSubmit = (value) => {
       }
     }
   };
+
+// Replace the handleStepNavigation function with this:
+const handleStepNavigation = (stepIndex) => {
+  console.log("Navigating to step:", stepIndex);
   
+  // Reset status for steps after the one we're going back to
+  const updatedStepsStatus = [...stepsStatus];
+  for (let i = stepIndex; i < updatedStepsStatus.length; i++) {
+    updatedStepsStatus[i] = false;
+  }
+  
+  setStepsStatus(updatedStepsStatus);
+  setActiveStep(stepIndex);
+};
 
   //Recieving the Chosen Playlist from Step 1 Completion 
 
@@ -388,7 +401,7 @@ const handleOnboardingSubmit = (value) => {
           <GuestWelcome></GuestWelcome>
           <Profile sendLoginStatus={handleLoginStatus} sendUserInfo={handleUserInfo} guestMode={guestMode}/>
 
-          <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
+          <StepToggle stepsStatus={stepsStatus} activeStep={activeStep} onStepClick={handleStepNavigation}/>
             {
               activeStep === 0 ? 
                 <ChoosePlaylist sendStatus={handleStepsStatus} sendChosenPlaylist={handleChosenPlaylist} guestMode={guestMode}/>
@@ -445,7 +458,6 @@ const handleOnboardingSubmit = (value) => {
                 width: '100%',
                 display: 'flex',
                 flexDirection:'column',
-                pt:2
               }}
             >
               <Box sx={{ display: 'flex', flexDirection:"row", gap: 1, justifyContent: 'end' }}>
@@ -481,7 +493,7 @@ const handleOnboardingSubmit = (value) => {
         ) : (
           // Main app flow components (Profile is already visible above)
           <>
-            <StepToggle stepsStatus={stepsStatus} activeStep={activeStep}/>
+            <StepToggle stepsStatus={stepsStatus} activeStep={activeStep} onStepClick={handleStepNavigation}/>
             {
               activeStep === 0 ? 
                 <ChoosePlaylist sendStatus={handleStepsStatus} sendChosenPlaylist={handleChosenPlaylist}/>
@@ -538,7 +550,6 @@ const handleOnboardingSubmit = (value) => {
                 width: '100%',
                 display: 'flex',
                 flexDirection:'column',
-                pt:2
               }}
             >
               <Box sx={{ display: 'flex', flexDirection:"row", gap: 1, justifyContent: 'end' }}>
