@@ -233,7 +233,7 @@ const LandingDesktop = () => {
           borderRadius: '50%',
           background: 'linear-gradient(180deg, #fceabb, #FFD8A8)',
           zIndex: 0,
-          animation: 'slideIn 2s ease-out forwards',
+          animation: 'slideIn 1.5s ease-out forwards',  // Changed from 2s to 1.5s
           '@keyframes slideIn': {
             from: {
               right: '-100%',
@@ -242,14 +242,6 @@ const LandingDesktop = () => {
               right: '-25%',
             }
           },
-          '@-webkit-keyframes slideIn': {
-            from: {
-              right: '-100%',
-            },
-            to: {
-              right: '-25%',
-            }
-          }
         }}
       >
         <Box 
@@ -283,72 +275,100 @@ const LandingDesktop = () => {
 
 
       {/* Display images */}
-      <Box 
-        sx={{
-          position: 'absolute',
-          top: '50%',
-          right: '10%',
-          transform: 'translateY(-50%)',
-          height: '60vh',
-          width: '25%',
-          zIndex: 1,
+<Box 
+  sx={{
+    position: 'absolute',
+    top: '50%',
+    right: '10%',
+    transform: 'translateY(-50%)',
+    height: '60vh',
+    width: '25%',
+    zIndex: 1,
+    display: 'block',
+    pointerEvents: 'none'
+  }}
+>
+  <Box
+    sx={{
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+    }}
+  >
+    <Box
+      sx={{
+        position: 'absolute',
+        width: '75%',
+        left: '-2vw',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        animation: 'pulse 1s ease-in-out',
+        '@keyframes pulse': {
+          '0%': {
+            transform: 'translateY(-50%) scale(0.8)',
+            opacity: 0,
+          },
+          '50%': {
+            transform: 'translateY(-50%) scale(1.05)',
+          },
+          '100%': {
+            transform: 'translateY(-50%) scale(1)',
+            opacity: 1,
+          }
+        }
+      }}
+    >
+      <img 
+        src={display_1} 
+        alt="Display 1"
+        style={{
+          width: '100%',
+          height: 'auto',
           display: 'block',
-          pointerEvents: 'none'
+          borderRadius: '8px',
+          objectFit: 'contain',
+          maxHeight: '70vh',
         }}
-      >
-        <Box
-          sx={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <Box
-            sx={{
-              position: 'absolute',
-              width: '75%',
-              left: '-2vw',
-              top: '50%',
-              transform: 'translateY(-50%)',
-            }}
-          >
-            <img 
-              src={display_1} 
-              alt="Display 1"
-              style={{
-                width: '100%',
-                height: 'auto',
-                display: 'block',
-                borderRadius: '8px',
-                objectFit: 'contain',
-                maxHeight: '70vh',
-              }}
-            />
-          </Box>
-          <Box
-            sx={{
-              position: 'absolute',
-              width: '80%',
-              right: '-8vw',
-              top: '50%',
-              transform: 'translateY(-50%)',
-            }}
-          >
-            <img 
-              src={display_2} 
-              alt="Display 2"
-              style={{
-                width: '100%',
-                height: 'auto',
-                display: 'block',
-                borderRadius: '8px',
-                objectFit: 'contain',
-                maxHeight: '70vh',
-              }}
-            />
-          </Box>
-        </Box>
-      </Box>
+      />
+    </Box>
+    <Box
+      sx={{
+        position: 'absolute',
+        width: '80%',
+        right: '-8vw',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        animation: 'pulse 1s ease-in-out 0.2s backwards',
+        '@keyframes pulse': {
+          '0%': {
+            transform: 'translateY(-50%) scale(0.8)',
+            opacity: 0,
+          },
+          '50%': {
+            transform: 'translateY(-50%) scale(1.05)',
+          },
+          '100%': {
+            transform: 'translateY(-50%) scale(1)',
+            opacity: 1,
+          }
+        }
+      }}
+    >
+      <img 
+        src={display_2} 
+        alt="Display 2"
+        style={{
+          width: '100%',
+          height: 'auto',
+          display: 'block',
+          borderRadius: '8px',
+          objectFit: 'contain',
+          maxHeight: '70vh',
+        }}
+      />
+    </Box>
+  </Box>
+</Box>
       
 
 
