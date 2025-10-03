@@ -56,7 +56,7 @@ const LandingDesktop = () => {
         }}
       >
         <img width="100%" src={logo} alt="auXmod logo" />
-        <Typography variant='h6' color='black' sx={{fontSize:'1.5rem'}}>
+        <Typography variant='h6' color='white' sx={{fontSize:'1.5rem', fontWeight:'700'}}>
           auXmod
         </Typography>
       </Box>
@@ -76,11 +76,10 @@ const LandingDesktop = () => {
         }}
       >
         <Typography variant='h3' sx={{
-          fontWeight:'500',
-          fontSize: '3rem'
-        }} color='black'>
-          Your aux, Your rules
-        </Typography>
+          fontWeight:'700',
+          fontSize: '4rem'
+        }} color='white'>
+          Decide what explicit means to you</Typography>
         <Box sx={{ mt: 2 }}>
           <Typography variant='h6' sx={{
             fontWeight:'350',
@@ -116,7 +115,7 @@ const LandingDesktop = () => {
               backgroundColor: 'secondary.main',
             }}
           >
-            Get Started!
+            Try it out!
           </Button>
 
           <Button 
@@ -284,7 +283,7 @@ const LandingDesktop = () => {
 
 
       {/* Display images */}
-      {/* <Box 
+      <Box 
         sx={{
           position: 'absolute',
           top: '50%',
@@ -349,7 +348,7 @@ const LandingDesktop = () => {
             />
           </Box>
         </Box>
-      </Box> */}
+      </Box>
       
 
 
