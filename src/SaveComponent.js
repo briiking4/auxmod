@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { Button, Box, Typography, IconButton, Snackbar, Alert, Tooltip} from '@mui/material';
+import { Button, Box, Typography, IconButton, Snackbar, Alert, Tooltip, Chip, ToggleButtonGroup, ToggleButton} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PreviewPlaylist from './PreviewPlaylist';
 import spotifyApi from './spotifyApi';
@@ -17,16 +17,19 @@ import ErrorIcon from '@mui/icons-material/Error';
 import MusicOffIcon from '@mui/icons-material/MusicOff';
 import BlockIcon from '@mui/icons-material/Block';
 
-
+import InfoIcon from '@mui/icons-material/Info';
 
 import SoapIcon from '@mui/icons-material/Soap';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import SafetyCheckIcon from '@mui/icons-material/SafetyCheck';
+
 
 
 import ReactGA from 'react-ga4';
 import { Helmet } from 'react-helmet';
+
 
 
 
@@ -39,6 +42,8 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
   const [excludeTrack, setExcludeTrack] = useState(null)
   const [originalIndexIncluded, setOriginalIndexIncluded] = useState(null);
   const [originalIndexExcluded, setOriginalIndexExcluded] = useState(null);
+  const [selectedReasons, setSelectedReasons] = useState([]);
+
 
    // Google Analytics tracking:
 
@@ -47,10 +52,52 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
       setLocalCleanedPlaylist(cleanedPlaylist);
   }, []);
 
-  const displayedTracks =
-    view === 'included'
-      ? localCleanedPlaylist?.tracksAdded || []
-      : localCleanedPlaylist?.excludedTracks || [];
+  const displayedTracks = (
+    view === 'included' ? localCleanedPlaylist?.tracksAdded || [] : localCleanedPlaylist?.excludedTracks || []
+  ).filter(track => {
+      if (selectedReasons.length === 0) return true;
+
+      return selectedReasons.some(reason => {
+        if (reason === 'whitelist') {
+          return track.trackAnalysis?.profanity?.whitelistedWordsFound?.length > 0;
+        }
+        if (reason === 'blacklist') {
+          return track.trackAnalysis?.profanity?.customBlacklistedWordsFound?.length > 0;
+        }
+        if (reason === 'Profanity') {
+          return track.reason.includes('Profanity') && 
+                 (track.trackAnalysis?.profanity?.customBlacklistedWordsFound?.length === 0);
+        }
+        return track.reason?.includes(reason);
+      });
+    }
+  );
+
+  const appearingReasons = new Set();
+
+  (view === 'included'
+    ? localCleanedPlaylist?.tracksAdded
+    : view === 'excluded'
+    ? localCleanedPlaylist?.excludedTracks
+    : []
+  )?.forEach(track => {
+    if (track.reason) {
+      track.reason.forEach(r => appearingReasons.add(r));
+    }
+    if (track.trackAnalysis?.profanity?.whitelistedWordsFound?.length > 0) {
+      appearingReasons.add('whitelist');
+    }
+    if (track.trackAnalysis?.profanity?.customBlacklistedWordsFound?.length > 0) {
+      appearingReasons.add('blacklist');
+    }
+  });
+  
+
+
+  console.log("DISPLAYED TRACKS", displayedTracks)
+  console.log("SELECTED REASONS", selectedReasons)
+
+  
 
   const sendStepStatus = (state) => {
     console.log("Step 3 complete: Sending status:", state);
@@ -265,43 +312,67 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
           flexDirection: 'column',
           flex: 1,
           overflow: 'hidden',
-          mt:2
+          mt:2,
+          alignItems:'center'
         }}>
           {/* Toggle Buttons */}
-          <Box
+          <ToggleButtonGroup
+          value={view}
+          exclusive
+          onChange={(e, newView) => newView && setView(newView)}
+          sx={{ borderRadius: '100px', overflow: 'hidden' }}
+        >
+          <ToggleButton
+            value="included"
             sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              mb: 2,
-              flexShrink: 0,
-              mx:'auto',
-              gap:'40px',
+              px: 3,
+              border:'none',
+              bgcolor: view === 'included' ? 'secondary.main' : 'secondary.light',
+              color: 'text.primary',
+              '&.Mui-selected': {
+                bgcolor: 'secondary.main',
+                color: 'text.primary',
+                '&:hover': {
+                  bgcolor: 'secondary.main', 
+                },
+              },
             }}
           >
-            <Button
+            
+            <Box sx={{display: 'flex', alignItems:'center', }}>
+              <Tooltip title="Tracks that passed your filters or a clean version replacement was found." enterTouchDelay={0} leaveTouchDelay={3000}> 
+                <InfoIcon sx={{marginRight: "5px"}}fontSize="small" />
+              </Tooltip>
+            </Box>
+              Passed ({localCleanedPlaylist.tracksAdded.length}) 
+          </ToggleButton>
+            <ToggleButton
+              value="excluded"
               sx={{
-                minWidth: '102px',
-                borderRadius: '50px',
-                backgroundColor: view === 'included' ? 'secondary.main' : 'secondary.light',
-                color: 'text.primary'
+                px: 3,
+                border:'none',
+                bgcolor: view === 'excluded' ? 'secondary.main' : 'secondary.light',
+                color: 'text.primary',
+                '&.Mui-selected': {
+                  bgcolor: 'secondary.main',
+                  color: 'text.primary',
+                  '&:hover': {
+                    bgcolor: 'secondary.main', 
+
+                  },
+                },
               }}
-              onClick={() => setView('included')}
             >
-              Review & Save ({localCleanedPlaylist.tracksAdded.length})
-            </Button>
-            <Button
-              sx={{
-                minWidth: '102px',
-                borderRadius: '50px',
-                backgroundColor: view === 'excluded' ? 'secondary.main' : 'secondary.light',
-                color: 'text.primary'
-              }}
-              onClick={() => setView('excluded')}
-            >
-              View Removed ({localCleanedPlaylist.excludedTracks.length})
-            </Button>
-          </Box>
+                          
+            <Box sx={{display: 'flex', alignItems:'center', }}>
+              <Tooltip title="Tracks that did not pass your filters or no clean version was found."  enterTouchDelay={0} leaveTouchDelay={3000}> 
+                <InfoIcon sx={{marginRight: "5px"}}fontSize="small" />
+              </Tooltip>
+            </Box>
+            Removed ({localCleanedPlaylist.excludedTracks.length}) 
+            </ToggleButton>
+        </ToggleButtonGroup>
+
 
 
             {/* Filter Message */}
@@ -327,7 +398,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               {
                 view === 'excluded' && (
                   <>
-                    <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>If profanity is the only "reason" listed, no clean version was found. Feel free to add back any songs you want to include!</Alert>
+                    {/* <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>If profanity is the only "reason" listed, no clean version was found. Feel free to add back any songs you want to include!</Alert> */}
 
                     <Box 
                       sx={{ 
@@ -336,23 +407,33 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                         alignItems: 'center', 
                         flexWrap: 'wrap', 
                         gap: 1, 
-                        pt: 1,
+                        mt:2
                       }}
                     >
                       {[
-                        { icon: <ProfanityIcon />, label: 'Profanity' },
-                        { icon: <ViolenceIcon />, label: 'Violence' },
-                        { icon: <LocalFireDepartmentIcon />, label: 'Sexual' },
+                        { icon: <ProfanityIcon sx={{marginLeft:'8px'}}/>, label: 'Profanity', name:'Profanity' },
+                        { icon: <ViolenceIcon />, label: 'Violence', name:'Violence' },
+                        { icon: <LocalFireDepartmentIcon />, label: 'Sexual', name:'Sexual' },
+                        { icon: <MusicOffIcon />, label: 'No lyrics', name:'No score' },
+                        { icon: <BlockIcon />, label: 'Blocked word', name:'blacklist'}
                       ]
-                      .filter(item => chosenFilters.includes(item.label)) // Show only chosen filters
-                      .concat([{ icon: <MusicOffIcon />, label: 'No lyrics' },{ icon: <BlockIcon />, label: 'Blocked word' } ]) // Always include this
+                      .filter(item => appearingReasons.has(item.name))
                       .map((item, index) => (
-                        <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
-                          <IconButton size="small" disabled>
-                            {item.icon}
-                          </IconButton>
-                          <Typography variant="caption">{item.label}</Typography>
-                        </Box>
+                        <Chip
+                          key={index}
+                          icon={item.icon}
+                          label={item.label}
+                          variant={selectedReasons.includes(item.name) ? 'contained' : 'outlined'}
+                          color={selectedReasons.includes(item.name) ? 'text.primary' : 'default'}
+                          sx={{borderColor:'black'}}
+                          onClick={() => {
+                            setSelectedReasons(prev =>
+                              prev.includes(item.name)
+                                ? prev.filter(r => r !== item.name)
+                                : [...prev, item.name]
+                            );
+                          }}
+                        />
                       ))}
                     </Box>
                   </>
@@ -361,8 +442,6 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               {
                 view === 'included' && (
                   <>
-                   <Alert severity="info" sx={{textAlign:'left', display:'flex', width: 'fit-content', mx:'auto'}}>Still see E tags? Don't worry, we've scanned the lyrics according to your filters. Feel free to manually remove songs.</Alert>
-
                     <Box 
                       sx={{ 
                         display: 'flex', 
@@ -370,22 +449,32 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                         alignItems: 'center', 
                         flexWrap: 'wrap', 
                         gap: 1, 
-                        pt:1,
+                        pt:2,
 
                       }}
                     >
                       {[
-                        { icon: <VerifiedIcon />, label: 'Passed filters' },
-                        { icon: <SoapIcon sx={{ transform: 'translateY(-2px)' }} />, label: 'Clean version' },
-                        { icon: <FactCheckIcon />, label: 'Has allowed word(s)' },
+                        { icon: <SafetyCheckIcon />, name:'check manually', label: 'Double-check' },
+                        { icon: <SoapIcon sx={{ transform: 'translateY(-2px)' }} />, name:'clean version', label: 'Clean version' },
+                        { icon: <FactCheckIcon />, name:'whitelist', label: 'Allowed word(s)' },  
                       ]
+                      .filter(item => appearingReasons.has(item.name))
                       .map((item, index) => (
-                        <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
-                          <IconButton size="small" disabled>
-                            {item.icon}
-                          </IconButton>
-                          <Typography variant="caption">{item.label}</Typography>
-                        </Box>
+                        <Chip
+                          key={index}
+                          icon={item.icon}
+                          label={item.label}
+                          variant={selectedReasons.includes(item.name) ? 'contained' : 'outlined'}
+                          color={selectedReasons.includes(item.name) ? 'text.primary' : 'default'}
+                          sx={{borderColor:'black'}}
+                          onClick={() => {
+                            setSelectedReasons(prev =>
+                              prev.includes(item.name)
+                                ? prev.filter(r => r !== item.name)
+                                : [...prev, item.name]
+                            );
+                          }}
+                        />
                       ))}
                     </Box>
                   </>
@@ -424,7 +513,6 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
 
 
           {/* Save Button - Fixed at bottom */}
-          {view === 'included' && (
             <Box
               sx={{
                 display: 'flex',
@@ -448,7 +536,6 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
               </div>
             </Tooltip>
             </Box>
-          )}
         </Box>
       ) : (
         <Typography>I'm sorry, an issue has occured. Please try again.</Typography>

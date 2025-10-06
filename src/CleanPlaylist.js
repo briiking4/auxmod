@@ -222,6 +222,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
                   track.reason.push("Sexual");
                   failedFilter = true;
                 }
+
               } else {
                 if (item && item.status === 'failed') {
                   track.reason.push("Error");
@@ -256,6 +257,9 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
                   return { type: 'explicit', track };
                 }
               } else {
+                if(track.explicit && (track.trackAnalysis.profanity?.whitelistedWordsFound.length === 0)){
+                  track.reason.push("check manually");
+                }
                 track.reason.push("passed filters");
                 return { type: 'clean', track };
               }

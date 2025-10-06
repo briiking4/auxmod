@@ -47,16 +47,17 @@ const LandingDesktop = () => {
         sx={{
           position: 'absolute',
           top: '16px',
-          left: '16px',
+          left: '40px',
           zIndex: 5,
-          maxWidth: '100px', 
+          maxWidth: '120px', 
           display: 'flex', 
           flexDirection: 'column', 
           textAlign: 'center',
+          alignItems:'center'
         }}
       >
         <img width="100%" src={logo} alt="auXmod logo" />
-        <Typography variant='h6' color='white' sx={{fontSize:'1.5rem', fontWeight:'700'}}>
+        <Typography variant='h6' color='white' sx={{fontSize:'2.5rem', fontWeight:'700'}}>
           auXmod
         </Typography>
       </Box>

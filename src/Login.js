@@ -225,7 +225,7 @@ export default function Login({ sendLoginStatus, sendAccessToken, sendGuestModeS
               sx={{
                 opacity: 0,
                 animation: `${fadeIn} 1s ease-out 1s`,
-                animationFillMode: 'forwards'
+                animationFillMode: 'forwards',
               }}
             >
               auXmod
