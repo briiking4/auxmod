@@ -208,10 +208,10 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
     const normalize = s => (
       s == null ? '' :
       String(s)
-      .replace(/[\[\]\(\)\{\}-]/g, ' ')  // replace brackets, parentheses, and dashes with space
-      .replace(/[^\w\s]/g, '')            // remove all other punctuation (commas, apostrophes, etc.)
-      .replace(/\s+/g, ' ')                      // collapse multiple spaces to one
-        .trim()                                    // remove leading/trailing space
+      .replace(/[\[\]\(\)\{\}-]/g, ' ')  
+      .replace(/[^\w\s]/g, '')           
+      .replace(/\s+/g, ' ')                      
+        .trim()                                   
         .toLowerCase()
     );
 

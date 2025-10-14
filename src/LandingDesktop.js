@@ -68,6 +68,7 @@ const LandingDesktop = () => {
           gridColumn: '1',
           pl: 4,
           mr: 4,
+          pt:10,
           textAlign: 'center',
           position: 'relative', 
           zIndex: 1,
