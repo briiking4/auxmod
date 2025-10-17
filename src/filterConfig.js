@@ -3,6 +3,7 @@ import ProfanityIcon from "./ProfanityIcon.js"
 import ViolenceIcon from "./ViolenceIcon.js"
 import OfflineBoltIcon from '@mui/icons-material/OfflineBolt';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import HealingIcon from '@mui/icons-material/Healing';
 
 export const filterCategories = [
   {
@@ -38,6 +39,14 @@ export const filterCategories = [
         defaultSelected: false,
         options: {}
       },
+      {
+        id: 'self-harm',
+        label: 'Self-Harm',
+        type: 'button',
+        icon: 'healingIcon',
+        defaultSelected: false,
+        options: {}
+      }
     ]
   },
   // {
@@ -83,5 +92,6 @@ export const iconMap = {
   profanityIcon:<ProfanityIcon/>,
   violenceIcon:<ViolenceIcon/>,
   energyIcon: <OfflineBoltIcon/>,
-  sexualIcon: <LocalFireDepartmentIcon/>
+  sexualIcon: <LocalFireDepartmentIcon/>,
+  healingIcon: <HealingIcon/>
 };

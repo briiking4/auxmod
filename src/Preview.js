@@ -107,6 +107,7 @@ export default function Preview({sendStatus, item}) {
                   sx={{ 
                     minWidth: '102px',
                     borderRadius: '50px',
+                    mb:'15px',
                   }}
                   onClick={() => {
                     handleConfirm()

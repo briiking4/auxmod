@@ -235,7 +235,7 @@ const LandingDesktop = () => {
           borderRadius: '50%',
           background: 'linear-gradient(180deg, #fceabb, #FFD8A8)',
           zIndex: 0,
-          animation: 'slideIn 1.5s ease-out forwards',  // Changed from 2s to 1.5s
+          animation: 'slideIn 1.5s ease-out forwards',  
           '@keyframes slideIn': {
             from: {
               right: '-100%',

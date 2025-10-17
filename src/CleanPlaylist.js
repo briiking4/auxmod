@@ -222,6 +222,10 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
                   track.reason.push("Sexual");
                   failedFilter = true;
                 }
+                if ((chosenFilters.find(filter => filter.id === "self-harm")) && item.self_harm > 0.50) {
+                  track.reason.push("Self-Harm");
+                  failedFilter = true;
+                }
 
               } else {
                 if (item && item.status === 'failed') {

@@ -12,6 +12,7 @@ import ViolenceIcon from './ViolenceIcon';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import DiscFullIcon from '@mui/icons-material/DiscFull';
 import CloseIcon from '@mui/icons-material/Close';
+import HealingIcon from '@mui/icons-material/Healing';
 
 import ErrorIcon from '@mui/icons-material/Error';
 import MusicOffIcon from '@mui/icons-material/MusicOff';
@@ -413,6 +414,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                       {[
                         { icon: <ProfanityIcon sx={{marginLeft:'8px'}}/>, label: 'Profanity', name:'Profanity' },
                         { icon: <ViolenceIcon />, label: 'Violence', name:'Violence' },
+                        { icon: <HealingIcon />, label: 'Self-Harm', name:'Self-Harm' },
                         { icon: <LocalFireDepartmentIcon />, label: 'Sexual', name:'Sexual' },
                         { icon: <MusicOffIcon />, label: 'No lyrics', name:'No score' },
                         { icon: <BlockIcon />, label: 'Blocked word', name:'blacklist'}

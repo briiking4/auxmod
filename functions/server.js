@@ -653,9 +653,11 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
     const profanityFilter = chosenFilters?.find(filter => filter.label === "Profanity");
     const violenceFilter = chosenFilters?.find(filter => filter.label === "Violence");
     const sexualFilter = chosenFilters?.find(filter => filter.label === "Sexual");
+    const selfHarmFilter = chosenFilters?.find(filter => filter.label === "Self-Harm");
+
     
     const shouldCheckProfanity = !!profanityFilter;
-    const shouldCheckModeration = !!(violenceFilter || sexualFilter);
+    const shouldCheckModeration = !!(violenceFilter || sexualFilter || selfHarmFilter);
     const whitelist = profanityFilter?.options?.whitelist || [];
     const blacklist = profanityFilter?.options?.blacklist || [];
 
@@ -694,8 +696,8 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
       // Combine results
       songsWithLyrics.forEach(({ index, song, lyrics }, i) => {
         const moderationResult = shouldCheckModeration 
-          ? moderationResults[i] || { sexual: null, violence: null, status: 'failed' }
-          : { sexual: null, violence: null, status: 'success' };
+          ? moderationResults[i] || { sexual: null, violence: null, self_harm: null, status: 'failed' }
+          : { sexual: null, violence: null, self_harm: null, status: 'success' };
           
         const profanityResult = shouldCheckProfanity ? profanityResults[i] : null;
 
@@ -704,7 +706,8 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
           lyrics: lyrics,
           sexually_explicit: moderationResult.sexual,
           profanity: profanityResult,
-          violence: moderationResult.violence
+          violence: moderationResult.violence,
+          self_harm: moderationResult.self_harm
         };
       });
     }
@@ -717,6 +720,7 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
         sexually_explicit: null,
         profanity: null,
         violence: null,
+        self_harm: null,
         error: error || 'No lyrics found'
       };
     });
@@ -728,6 +732,7 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
         sexually_explicit: null,
         profanity: null,
         violence: null,
+        self_harm: null
       };
     });
     
@@ -773,14 +778,16 @@ async function checkModerationBatch(lyricsArray) {
         input: lyricsArray,
       })
     );
+    console.log("MODERATION RESULTS:", moderation.results)
 
     if (!moderation.results || moderation.results.length !== lyricsArray.length) {
       console.warn("Mismatch in moderation results length.");
-      return lyricsArray.map(() => ({ sexual: null, violence: null, status: 'failed' }));
+      return lyricsArray.map(() => ({ sexual: null, violence: null, self_harm: null, status: 'failed' }));
     } else {
       return moderation.results.map(result => ({
         sexual: result.category_scores?.sexual ?? null,
         violence: result.category_scores?.violence ?? null,
+        self_harm: result.category_scores?.['self-harm'] ?? null,
         status: 'success'
       }));
     }

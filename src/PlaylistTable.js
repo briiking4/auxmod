@@ -27,6 +27,7 @@ import FactCheckIcon from "@mui/icons-material/FactCheck";
 import ProfanityIcon from './ProfanityIcon';
 import ViolenceIcon from './ViolenceIcon';
 import SafetyCheckIcon from '@mui/icons-material/SafetyCheck';
+import HealingIcon from '@mui/icons-material/Healing';
 
 import { OpenInFull, CloseFullscreen } from '@mui/icons-material';
 
@@ -213,6 +214,9 @@ export default function PlaylistTable({
                         )}
                         {track.reason?.includes('Sexual') && (
                           <Tooltip title="Sexual Content"><span><LocalFireDepartmentIcon /></span></Tooltip>
+                        )}
+                        {track.reason?.includes('Self-Harm') && (
+                          <Tooltip title="Self-Harm"><span><HealingIcon /></span></Tooltip>
                         )}
                         {track.reason?.includes('No score') && (
                           <Tooltip title="Lyrics unavailable"><span><MusicOffIcon /></span></Tooltip>
