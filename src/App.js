@@ -142,6 +142,7 @@ export default function App() {
 
     console.log("Posthog user", posthogUser)
     const user_onboarded = posthogUser?.properties.has_completed_onboarding_survey
+    console.log("Did the user onboard? : ", user_onboarded)
     const fetchOnboardingSurvey = async () => {
       return new Promise(resolve => {
         posthog?.getActiveMatchingSurveys((surveys) => {
@@ -160,7 +161,7 @@ export default function App() {
         });
       });
     };
-    if(user_onboarded === false){
+    if(!user_onboarded){
       fetchOnboardingSurvey();
     }else{
       setShowOnboardingSurvey(false);
