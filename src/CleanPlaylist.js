@@ -143,8 +143,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   const analyzeTracksData = async (tracks) => {
     onProgressUpdate(11);
   
-    const CHUNK_SIZE = 10;
-    const CHUNK_CONCURRENCY = 1;
+    const CHUNK_SIZE = 15;
+    const CHUNK_CONCURRENCY = 2;
     const limit = pLimit(CHUNK_CONCURRENCY);
   
     const results = {
@@ -244,7 +244,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
               }
   
               if (failedFilter) {
-                if ((track.reason.length === 1) && (track.reason[0] === "Profanity") && (track.trackAnalysis.profanity?.customBlacklistedWordsFound.length === 0)) {
+                let replaceCleanVersion = (chosenFilters.find(filter => filter.id === "profanity")).options.replaceClean
+                if ((track.reason.length === 1) && (track.reason[0] === "Profanity") && replaceCleanVersion && (track.trackAnalysis.profanity?.customBlacklistedWordsFound.length === 0)) {
                   if (track.explicit) {
                     return { type: 'needs-clean-search', track };
                   }

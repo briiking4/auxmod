@@ -45,6 +45,7 @@ export default function StepToggle({stepsStatus, activeStep, onStepClick}) {
             display:'flex',
             borderRadius: '50%',
             backgroundColor: isActive || isComplete ? 'secondary.main' : 'secondary.light',
+            boxShadow: isActive || isComplete ? 5 : 0,
             position: 'relative',
             justifyContent:'center',
             alignItems:'center',

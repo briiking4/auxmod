@@ -115,6 +115,25 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
       };
     });
   };
+
+  const handleCleanVersionCheck = (isChecked) => {
+    console.log("Hnadling clean version check in set filters", isChecked);
+    setFilterState(prevState => {
+      if (!prevState.profanity) return prevState;
+      
+      return {
+        ...prevState,
+        profanity: {
+          ...prevState.profanity,
+          options: {
+            ...prevState.profanity.options,
+            replaceClean: isChecked
+          }
+        }
+      };
+    });
+
+  }
   
   // Group filters by category and placement
   const getCategoryFilters = (categoryId) => {
@@ -153,6 +172,7 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
           <AdvancedFilters 
           sendWhitelist={handleWhitelist} 
           sendBlacklist={handleBlacklist} 
+          sendCleanVersionCheck={handleCleanVersionCheck}
           filtersState={Object.values(filterState)} 
           loading={loading} 
           sendSettingsApplied={setSettingsApplied}

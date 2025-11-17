@@ -47,9 +47,14 @@ export default function ChoosePlaylist({sendStatus, sendChosenPlaylist, guestMod
           height: '100%',
           overflow: 'hidden'
         }}>
+          <Box sx={{top: 0}}>
+            <IconButton onClick={() => setSelectedPlaylist(null) } aria-label="back" sx={{p:0}}>
+              <ArrowBackIcon />
+            </IconButton>
+          </Box>
 
           {/* Preview the playlist that was selected. (Preview comp takes the emaining height) */}
-          <Box sx={{ flex: 1, overflow: 'hidden' }}>
+          <Box sx={{ flex: 1, overflow: 'hidden', flexDirection:'column'}}>
             <Preview sendStatus={handleStepStatus} item={selectedPlaylist}/>
           </Box>
         </Box>

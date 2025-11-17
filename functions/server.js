@@ -196,8 +196,6 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
     const encodedArtist = encodeURIComponent(songArtists[0]);
     const encodedTitle = encodeURIComponent(songTitle);
     const encodedAlbum = encodeURIComponent(albumName);
-
-    console.log('duration', duration)
     
 
     const url = `https://lrclib.net/api/search?artist_name=${encodedArtist}&track_name=${encodedTitle}&album_name=${encodedAlbum}`
@@ -223,8 +221,6 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
 
     const roundDuration = d => Math.round(d);
 
-    console.log("rounded duration: ", roundDuration(duration))
-
     const filterLyric = (lyric, durationCheck, artistCheck) => {
       const roundedLyricDuration = roundDuration(lyric.duration);
       const roundedTargetDuration = roundDuration(duration);
@@ -244,14 +240,14 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
     let filteredResult = data.find(lyric =>
       filterLyric(lyric, (lyricDur, targetDur) => lyricDur === targetDur, matchesAllArtists)
     );
-    if (filteredResult) console.log("Found in step 1: Exact duration + all artists");
+    // if (filteredResult) console.log("Found in step 1: Exact duration + all artists");
 
     // 2️nd try Exact duration, main artist only
     if (!filteredResult) {
       filteredResult = data.find(lyric =>
         filterLyric(lyric, (lyricDur, targetDur) => lyricDur === targetDur, matchesMainArtist)
       );
-      if (filteredResult) console.log("Found in step 2: Exact duration + main artist");
+      // if (filteredResult) console.log("Found in step 2: Exact duration + main artist");
     }
 
     // 3rd try ±2 seconds, all artists
@@ -263,7 +259,7 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
           matchesAllArtists
         )
       );
-      if (filteredResult) console.log("Found in step 3: ±2 seconds + all artists");
+      // if (filteredResult) console.log("Found in step 3: ±2 seconds + all artists");
     }
 
     // 4th try ±2 seconds, main artist only
@@ -275,7 +271,7 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
           matchesMainArtist
         )
       );
-      if (filteredResult) console.log("Found in step 4: ±2 seconds + main artist");
+      // if (filteredResult) console.log("Found in step 4: ±2 seconds + main artist");
     }
 
     // removing the duplicated lines from the lyrics
@@ -300,7 +296,7 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
 
 
     if(filteredResult.instrumental){
-      console.log("song is instrumental", filteredResult)
+      // console.log("song is instrumental", filteredResult)
       return "instrumental"
     }else{
       let lyrics = removeDuplicateLines(filteredResult.plainLyrics)
@@ -339,7 +335,6 @@ async function getLyrics(songTitle, songArtists, albumName, duration) {
 
 // Profanity checking function
 function checkProfanity(lyrics, whitelist = [], blacklist = []) {
-  console.log("Blacklist", blacklist)
   const normalizedWhitelist = whitelist.map((w) => w.toLowerCase());
   const normalizedBlacklist = blacklist.map((w) => w.toLowerCase());
 
@@ -420,7 +415,7 @@ function checkProfanity(lyrics, whitelist = [], blacklist = []) {
   }
 
   if (matcher.hasMatch(lyrics)) {
-    console.log("Profanity detected!");
+    // console.log("Profanity detected!");
     const blacklistMatches = matcher.getAllMatches(lyrics);
     const blacklistMatchesMeta = blacklistMatches.map(myDataset.getPayloadWithPhraseMetadata.bind(myDataset));
 
@@ -447,7 +442,7 @@ function checkProfanity(lyrics, whitelist = [], blacklist = []) {
       blacklistOccurrences: blacklistWordCountOccurrences
     };
   } else {
-    console.log("No profanity found.");
+    // console.log("No profanity found.");
     return {
       hasProfanity: false,
       whitelistedWordsFound: Array.from(whitelistWordsFound),
@@ -533,7 +528,7 @@ function checkProfanity(lyrics, whitelist = [], blacklist = []) {
 // });
 
 const TOKEN_LIMIT = 10000; // TPM from OpenAI
-const REFILL_INTERVAL_MS = 1000; //
+const REFILL_INTERVAL_MS = 100; //
 const TOKEN_REFILL_RATE = TOKEN_LIMIT / 60000; // tokens per ms
 
 let tokensAvailable = TOKEN_LIMIT;
@@ -558,18 +553,15 @@ function processQueue() {
   }
 }
 
-const MAX_REQUESTS_PER_MIN = 60; 
-let requestsInLastMinute = [];
-
-
-
 function waitForTokens(tokensNeeded) {
   const startTime = Date.now();
 
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     if (tokensNeeded > TOKEN_LIMIT) {
-      throw new Error(`Requested tokens (${tokensNeeded}) exceed the TOKEN_LIMIT (${TOKEN_LIMIT})`);
+      reject(new Error(`CHUNK_TOO_LARGE:${tokensNeeded}`));
+      return;
     }
+    
     if (tokensAvailable >= tokensNeeded) {
       tokensAvailable -= tokensNeeded;
       const waitedMs = Date.now() - startTime;
@@ -635,7 +627,6 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
         try {
           console.log("SONG TITLE FROM REQ:", song.songTitle)
           console.log("SONG ARTIST FROM REQ:", song.songArtists)
-          console.log("SONG ISRC FROM REQ:", song.songIsrc)
 
 
           const lyrics = await getLyrics(song.songTitle, song.songArtists, song.songAlbum, song.songDuration);
@@ -763,13 +754,47 @@ async function checkModerationBatch(lyricsArray) {
     return [];
   }
 
-  console.log(`Processing ${lyricsArray.length} songs as a single batch`);
-
   const combinedText = lyricsArray.join('\n');
   const estimatedTokens = estimateTokens(combinedText);
 
   console.log(`[Moderation Batch] ${lyricsArray.length} songs, ~${estimatedTokens} tokens`);
-  await waitForTokens(estimatedTokens);
+
+  // Check if batch is too large for token bucket
+  if (estimatedTokens > TOKEN_LIMIT) {
+    console.warn(`[Moderation] Batch too large (${estimatedTokens} tokens), splitting in half`);
+    
+    // Split the batch in half and process recursively
+    const midpoint = Math.floor(lyricsArray.length / 2);
+    const firstHalf = lyricsArray.slice(0, midpoint);
+    const secondHalf = lyricsArray.slice(midpoint);
+    
+    console.log(`[Moderation] Split: ${firstHalf.length} + ${secondHalf.length} songs`);
+    
+    // Process both halves (they'll queue up in the token bucket)
+    const [firstResults, secondResults] = await Promise.all([
+      checkModerationBatch(firstHalf),
+      checkModerationBatch(secondHalf)
+    ]);
+    
+    return [...firstResults, ...secondResults];
+  }
+
+  // Normal processing path - wait for tokens
+  try {
+    await waitForTokens(estimatedTokens);
+  } catch (error) {
+    if (error.message.startsWith('CHUNK_TOO_LARGE:')) {
+      // This shouldn't happen due to the check above, but handle it anyway
+      console.error(`[Moderation] Token limit exceeded unexpectedly, splitting batch`);
+      const midpoint = Math.floor(lyricsArray.length / 2);
+      const [firstResults, secondResults] = await Promise.all([
+        checkModerationBatch(lyricsArray.slice(0, midpoint)),
+        checkModerationBatch(lyricsArray.slice(midpoint))
+      ]);
+      return [...firstResults, ...secondResults];
+    }
+    throw error;
+  }
 
   try {
     const moderation = await retry(() =>
@@ -778,22 +803,31 @@ async function checkModerationBatch(lyricsArray) {
         input: lyricsArray,
       })
     );
-    console.log("MODERATION RESULTS:", moderation.results)
 
     if (!moderation.results || moderation.results.length !== lyricsArray.length) {
       console.warn("Mismatch in moderation results length.");
-      return lyricsArray.map(() => ({ sexual: null, violence: null, self_harm: null, status: 'failed' }));
-    } else {
-      return moderation.results.map(result => ({
-        sexual: result.category_scores?.sexual ?? null,
-        violence: result.category_scores?.violence ?? null,
-        self_harm: result.category_scores?.['self-harm'] ?? null,
-        status: 'success'
+      return lyricsArray.map(() => ({ 
+        sexual: null, 
+        violence: null, 
+        self_harm: null, 
+        status: 'failed' 
       }));
     }
+
+    return moderation.results.map(result => ({
+      sexual: result.category_scores?.sexual ?? null,
+      violence: result.category_scores?.violence ?? null,
+      self_harm: result.category_scores?.['self-harm'] ?? null,
+      status: 'success'
+    }));
   } catch (error) {
     console.error("Error in batch moderation:", error);
-    return lyricsArray.map(() => ({ sexual: null, violence: null, status: 'failed' }));
+    return lyricsArray.map(() => ({ 
+      sexual: null, 
+      violence: null, 
+      self_harm: null, 
+      status: 'failed' 
+    }));
   }
 }
 

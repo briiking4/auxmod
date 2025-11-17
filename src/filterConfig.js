@@ -10,7 +10,7 @@ export const filterCategories = [
     id: 'moderation',
     title: 'Explicit Theme Filters',
     description: 'Select one or more filters:',
-    info: "If a song contains profanity <em>only</em>, we’ll swap in the clean version when available.",
+    // info: "If a song contains profanity <em>only</em>, we’ll swap in the clean version when available.",
     placement: 'main', // where the category appears
     order: 1, 
     flexDirection:'row',
@@ -21,7 +21,7 @@ export const filterCategories = [
         type: 'button',
         icon: 'profanityIcon', 
         defaultSelected: false,
-        options: { whitelist: [], blacklist: [] }
+        options: { whitelist: [], blacklist: [], replaceClean: true }
       },
       {
         id: 'violence',

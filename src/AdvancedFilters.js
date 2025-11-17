@@ -2,12 +2,13 @@ import * as React from 'react';
 import { useState, useEffect, } from 'react';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import { tooltipClasses } from "@mui/material/Tooltip";
-import { Box, Button, SvgIcon, Typography, Accordion, AccordionActions, AccordionSummary, AccordionDetails, TextField, Snackbar, Tooltip} from '@mui/material';
+import { Box, Button, SvgIcon, Typography, Accordion, AccordionActions, AccordionSummary, AccordionDetails, TextField, Snackbar, Tooltip, FormControlLabel, Checkbox} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ClearIcon from '@mui/icons-material/Clear';
 
 
-export default function AdvancedFilters({ sendWhitelist, sendBlacklist, loading, filtersState, sendSettingsApplied }) {
+
+export default function AdvancedFilters({ sendWhitelist, sendBlacklist, sendCleanVersionCheck, loading, filtersState, sendSettingsApplied }) {
 
 
   const profanityIcon = 
@@ -28,6 +29,8 @@ export default function AdvancedFilters({ sendWhitelist, sendBlacklist, loading,
   const [whitelistInputValue, setWhitelistInputValue] = useState("")
   const [snackbarOpen, setSnackbar ] = useState(false);
   const [toolTipOpen, setTooltipOpen] = React.useState(false);
+  const [cleanVersionIsChecked, setCleanVersionIsChecked] = useState(true);
+
 
 
   useEffect(() => {
@@ -80,6 +83,7 @@ export default function AdvancedFilters({ sendWhitelist, sendBlacklist, loading,
     const handleCancel = () =>{
       setWhitelist([]);
       setBlacklist([]);
+      setCleanVersionIsChecked(true);
       setProfanityOpen(false);
     }
 
@@ -92,9 +96,10 @@ export default function AdvancedFilters({ sendWhitelist, sendBlacklist, loading,
     }
 
     const handleConfirm = () => {
-      console.log("confirmed - set whitelist and blacklist")
+      console.log("confirmed - set whitelist, blacklist, and CV check")
       sendWhitelist(whitelist);
       sendBlacklist(blacklist);
+      sendCleanVersionCheck(cleanVersionIsChecked);
       setProfanityOpen(false);
       sendSettingsApplied(true);
       setSnackbar(true);
@@ -162,6 +167,11 @@ export default function AdvancedFilters({ sendWhitelist, sendBlacklist, loading,
     </React.Fragment>
   ;
 
+  const handleCleanVersionSetting = (value) => {
+    console.log("checked value: ", value);
+    setCleanVersionIsChecked(value)
+  }
+
 
     const showProfanity =
     <Box>
@@ -170,18 +180,28 @@ export default function AdvancedFilters({ sendWhitelist, sendBlacklist, loading,
               expandIcon={<ExpandMoreIcon />}
               aria-controls="panel3-content"
               id="panel3-header"
+              sx={{border: 1, borderColor:'#ebebeb'}}
             >
               <Box sx={{display:'flex', flexDirection:'column'}}>
-              <Typography component="span">Advanced Profanity Settings</Typography>
-              <Typography variant="caption">Profanity auto-blocks cuss words, explicit sexual terms, and derogatory language. Customize with advanced settings.</Typography> 
+                <Typography component="span">Advanced Profanity Settings</Typography>
+                <Typography variant="caption">Profanity <b>auto-blocks derogatory language</b> including explicit sexual terms and <b>automatically swaps in clean versions</b> when available. Customize with advanced settings.</Typography> 
               </Box>
             </AccordionSummary>
             <AccordionDetails>
+
+            <Box sx={{display:"flex", flexDirection:'column', alignItems:'start', mt:3}}>
+              <Typography fontWeight='bold' >
+                Clean Versions
+              </Typography>
+              <FormControlLabel 
+                control={<Checkbox checked= {cleanVersionIsChecked} onChange= {(e) => handleCleanVersionSetting(e.target.checked)} />} 
+                label={<Typography fontSize={"0.9rem"}>Replace tracks with clean version (if available)</Typography>} />
+            </Box>
              {/* whitelist Section */}
 
-              <Box sx={{display:"flex", flexDirection:'column' }}>
+              <Box sx={{display:"flex", flexDirection:'column', mt:3 }}>
                 <Typography fontWeight='bold' >
-                  Allow specific words:
+                  Allow specific words
                 </Typography>
                 <Typography fontStyle='italic' variant='caption' >
                 (Profanity you consider OKAY — <b>won’t be flagged by the filter</b>.)
@@ -241,7 +261,7 @@ export default function AdvancedFilters({ sendWhitelist, sendBlacklist, loading,
           {/* Blacklist Section */}
               <Box sx={{display:"flex", flexDirection:'column', mt: 3 }}>
                 <Typography fontWeight='bold' >
-                  Block specific words:
+                  Block specific words
                 </Typography>
                 <Typography fontStyle='italic' variant='caption' >
                 (Add extra words to block <b>on top of the standard profanity filter</b>.)
