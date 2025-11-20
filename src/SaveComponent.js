@@ -46,12 +46,20 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
   const [selectedReasons, setSelectedReasons] = useState([]);
 
 
+
    // Google Analytics tracking:
 
    useEffect(() => {
       ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Review & Save Playlist" });
       setLocalCleanedPlaylist(cleanedPlaylist);
   }, []);
+
+  useEffect(() =>{ 
+    setSelectedReasons([])
+
+  },[view]);
+
+
 
   const displayedTracks = (
     view === 'included' ? localCleanedPlaylist?.tracksAdded || [] : localCleanedPlaylist?.excludedTracks || []
