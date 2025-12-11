@@ -24,9 +24,7 @@ import SoapIcon from '@mui/icons-material/Soap';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-import SafetyCheckIcon from '@mui/icons-material/SafetyCheck';
-
-
+import WarningIcon from '@mui/icons-material/Warning';
 
 import ReactGA from 'react-ga4';
 import { Helmet } from 'react-helmet';
@@ -464,7 +462,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                       }}
                     >
                       {[
-                        { icon: <SafetyCheckIcon />, name:'check manually', label: 'Double-check' },
+                        { icon: <WarningIcon />, name:'check manually', label: 'Manual Check' },
                         { icon: <SoapIcon sx={{ transform: 'translateY(-2px)' }} />, name:'clean version', label: 'Clean version' },
                         { icon: <FactCheckIcon />, name:'whitelist', label: 'Allowed word(s)' },  
                       ]

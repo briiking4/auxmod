@@ -338,7 +338,7 @@ export default function Search({ sendItemSelected, guestMode }) {
   }, [selectedFilter]);
 
  const handleSearchChange = (e) => {
-  const query = e.target.value.trim();
+  const query = e.target.value;
   setSearchQuery(query);
   clearTimeout(debounceTimeout.current);
 
@@ -360,10 +360,11 @@ export default function Search({ sendItemSelected, guestMode }) {
 
   // Normal text search with debounce
   debounceTimeout.current = setTimeout(() => {
+    let clean_query = query.trim()
     if (selectedFilter === 'My Library') {
-      searchMyLibrary(query);
+      searchMyLibrary(clean_query);
     } else {
-      searchAllOfSpotify(query, 0, false);
+      searchAllOfSpotify(clean_query, 0, false);
     }
   }, 500);
 };

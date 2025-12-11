@@ -26,7 +26,7 @@ import VerifiedIcon from "@mui/icons-material/Verified";
 import FactCheckIcon from "@mui/icons-material/FactCheck";
 import ProfanityIcon from './ProfanityIcon';
 import ViolenceIcon from './ViolenceIcon';
-import SafetyCheckIcon from '@mui/icons-material/SafetyCheck';
+import WarningIcon from '@mui/icons-material/Warning';
 import HealingIcon from '@mui/icons-material/Healing';
 
 import { OpenInFull, CloseFullscreen } from '@mui/icons-material';
@@ -240,7 +240,7 @@ export default function PlaylistTable({
                             </Tooltip>
                           )}
                         {track.reason?.includes('check manually') && (
-                          <Tooltip title="Verify"><span><SafetyCheckIcon/></span></Tooltip>
+                          <Tooltip title="Verify"><span><WarningIcon/></span></Tooltip>
                         )}
 
                       </Box>

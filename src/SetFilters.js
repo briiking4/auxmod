@@ -248,9 +248,9 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
       </Box>
       <Box sx={{py:2}}>
         {
-        chosenPlaylist.total > 200 && loading &&
+        chosenPlaylist.total > 150 && loading &&
 
-        <Typography>This is a big playlist! Please sit tight, this will take a while.</Typography>
+        <Typography>Please sit tight, this will take a few minutes.</Typography>
 
         }
       </Box>

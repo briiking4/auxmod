@@ -143,7 +143,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   const analyzeTracksData = async (tracks) => {
     onProgressUpdate(11);
   
-    const CHUNK_SIZE = 15;
+    const CHUNK_SIZE = 5;
     const CHUNK_CONCURRENCY = 2;
     const limit = pLimit(CHUNK_CONCURRENCY);
   
