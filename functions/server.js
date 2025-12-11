@@ -19,7 +19,7 @@ import {
 import { spanishDataset, spanishEnglishBlacklistTransformers } from '../src/spanishDataset.js';
 import PQueue from 'p-queue';
 import { encode } from "gpt-tokenizer";
-import { acquire, release } from './openaiLimiter.js';
+import { acquire, release } from '../src/openaiLimiter.js';
 
 
 
