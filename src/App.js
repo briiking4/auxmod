@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {Container, Typography, Button, Box, CircularProgress} from '@mui/material';
 import Profile from './Profile';
 import StepToggle from './StepToggle';
@@ -50,11 +50,13 @@ export default function App() {
 
   // Cleaning Progress
 
-  const [cleaningProgress, setCleaningProgress] = useState(0);
+  const [cleaningProgress, setCleaningProgress] = useState({percentage: 0, phase: '', batchNumber: 0, totalBatches: 0});
 
   //Cleaned Playlist 
 
   const [cleanedPlaylist, setCleanedPlaylist] = useState(null)
+
+  const [cleanAbortController, setCleanAbortController] = useState(null)
 
   // Saved Playlist (the id of the cleaned playlist once the user saves it to their lib)
 
@@ -168,6 +170,18 @@ export default function App() {
       setLoadingSurveys(false);
     }
   }, [posthogUser]);
+
+  useEffect(() => {
+    return () => {
+      if (cleanAbortController) {
+        console.log('Aborting cleaning due to step change');
+        cleanAbortController.abort();
+        setCleanAbortController(null);
+        // Reset progress
+        setCleaningProgress({ percentage: 0, phase: '', batchNumber: 0, totalBatches: 0 });
+      }
+    };
+  }, [activeStep, cleanAbortController]);
 
 
 const handleOnboardingSubmit = (value) => {
@@ -309,9 +323,10 @@ const handleOnboardingSubmit = (value) => {
     }
   };
 
-// Replace the handleStepNavigation function with this:
 const handleStepNavigation = (stepIndex) => {
   console.log("Navigating to step:", stepIndex);
+  // Reset progress
+  setCleaningProgress({ percentage: 0 });
   
   // Reset status for steps after the one we're going back to
   const updatedStepsStatus = [...stepsStatus];
@@ -338,11 +353,14 @@ const handleStepNavigation = (stepIndex) => {
     setChosenFilters(filters);
   }
 
-// LEFT OFF: onprog update
+
   const handleApplyFilters = async (filters) => {            
     try {
       // reset cleaning progress
-      setCleaningProgress(0)
+      setCleaningProgress({percentage: 0})
+
+      const controller = new AbortController();
+      setCleanAbortController(controller);
       console.log("APP: Handling apply filters");
       let playlist_id = chosenPlaylist.id;
       console.log("APP (handle apply filters): Chosen Playlist Id: ")
@@ -350,12 +368,30 @@ const handleStepNavigation = (stepIndex) => {
 
       console.log("handling apply filters in APP. they are: ", filters)
 
-      const handleProgressUpdate = (progress) => {
-        console.log(`Progress: ${progress}%`);
-        setCleaningProgress(progress)
-      };
+      const handleProgressUpdate = (progress, phase, batchNumber, totalBatches) => {
+        setCleaningProgress(prev => {
+          // Only update state if these changed
+          if (
+            prev.percentage === progress &&
+            prev.phase === phase &&
+            prev.batchNumber === batchNumber &&
+            prev.totalBatches === totalBatches
+          ) {
+            return prev; // skip re-render
+          }
+        
+          // Something changed update state pf progress
+          console.log(`Progress: ${progress}% at the phase:`, phase);
+          return {
+            percentage: progress,
+            phase,
+            batchNumber,
+            totalBatches
+          };
+        });
+     };
   
-      const cleanedPlaylist = await CleanPlaylist(playlist_id, filters, handleProgressUpdate);
+      const cleanedPlaylist = await CleanPlaylist(playlist_id, filters, handleProgressUpdate, controller.signal);
 
       console.log("Cleaned Playlist: ")
 
@@ -366,6 +402,11 @@ const handleStepNavigation = (stepIndex) => {
 
     } catch (error) {
       console.error('Error cleaning playlist:', error);
+      if (error.name !== 'AbortError') {
+        console.error(error);
+      }
+
+
     }
   };
 
@@ -409,7 +450,8 @@ const handleStepNavigation = (stepIndex) => {
               : activeStep === 1 ?
                 <SetFilters onApplyFilters={handleApplyFilters} chosenPlaylist={chosenPlaylist} 
                   sendChosenFilters={handleChosenFilters} sendStatus={handleStepsStatus} 
-                  progress={cleaningProgress}/>
+                  progress={cleaningProgress}
+                  />
               : activeStep === 2 ?
               <>
                 {!stepsStatus[2] ? 
@@ -501,7 +543,8 @@ const handleStepNavigation = (stepIndex) => {
               : activeStep === 1 ?
                 <SetFilters onApplyFilters={handleApplyFilters} chosenPlaylist={chosenPlaylist} 
                   sendChosenFilters={handleChosenFilters} sendStatus={handleStepsStatus} 
-                  progress={cleaningProgress}/>
+                  progress={cleaningProgress}
+                  />
               : activeStep === 2 ?
               <>
                 {!stepsStatus[2] ? 

@@ -26,7 +26,7 @@ import VerifiedIcon from "@mui/icons-material/Verified";
 import FactCheckIcon from "@mui/icons-material/FactCheck";
 import ProfanityIcon from './ProfanityIcon';
 import ViolenceIcon from './ViolenceIcon';
-import WarningIcon from '@mui/icons-material/Warning';
+import FlagIcon from '@mui/icons-material/Flag';
 import HealingIcon from '@mui/icons-material/Healing';
 
 import { OpenInFull, CloseFullscreen } from '@mui/icons-material';
@@ -221,7 +221,7 @@ export default function PlaylistTable({
                         {track.reason?.includes('No score') && (
                           <Tooltip title="Lyrics unavailable"><span><MusicOffIcon /></span></Tooltip>
                         )}
-                        {track.reason?.includes('failed') && (
+                        {track.reason?.includes('Error') && (
                           <Tooltip title="Error"><span><ErrorIcon /></span></Tooltip>
                         )}
                         {track.reason?.includes('clean version') && (
@@ -240,7 +240,7 @@ export default function PlaylistTable({
                             </Tooltip>
                           )}
                         {track.reason?.includes('check manually') && (
-                          <Tooltip title="Verify"><span><WarningIcon/></span></Tooltip>
+                          <Tooltip title="Flagged for manual review"><span><FlagIcon/></span></Tooltip>
                         )}
 
                       </Box>

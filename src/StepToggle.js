@@ -27,11 +27,18 @@ export default function StepToggle({stepsStatus, activeStep, onStepClick}) {
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center',
-          cursor: isClickable ? 'pointer' : 'default',
+          cursor: isClickable ? 'pointer' : 'not-allowed',
+          opacity: isClickable ? 1 : 0.5,
+          transition: 'opacity 0.2s ease',
           '&:hover': isClickable ? {
             '& .step-circle': {
               transform: 'scale(1.1)',
-              transition: 'transform 0.2s ease'
+            },
+            '& .step-text': {
+              textDecoration: 'underline',
+              textDecorationColor: '#FFD8A8',
+              textDecorationThickness: '2px',
+              textUnderlineOffset: '4px',
             }
           } : {}
         }}
@@ -49,7 +56,9 @@ export default function StepToggle({stepsStatus, activeStep, onStepClick}) {
             position: 'relative',
             justifyContent:'center',
             alignItems:'center',
-            transition: 'transform 0.2s ease',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            border: isActive ? '3px solid' : 'none',
+            borderColor: 'secondary.dark',
           }}
         >
           {isComplete ? 
@@ -70,15 +79,43 @@ export default function StepToggle({stepsStatus, activeStep, onStepClick}) {
               top: '20%',
               right: '-25%',
               width: '50%',
-              height: 2,
+              height: 3,
               backgroundColor: '#F4E0C7',
             }}
-          />
+          >
+            <Box
+              sx={{
+                width: isComplete ? '100%' : '0%',
+                height: '100%',
+                backgroundColor: 'secondary.main',
+                transition: 'width 0.5s ease-in-out',
+              }}
+            />
+          </Box>
         )}
-        <Typography variant="body1" sx={{ mt: 1, color:'text.secondary' }}>
+        <Typography 
+          variant="body1" 
+          className="step-text"
+          sx={{ 
+            mt: 1, 
+            color:'text.secondary',
+            transition: 'all 0.2s ease',
+            userSelect: 'none'
+          }}
+        >
           {label}
         </Typography>
-        <Typography variant="body2" sx={{ mt: 0.5,color:'text.primary', fontWeight:'bold' }}>
+        <Typography 
+          variant="body2"
+          className="step-text" 
+          sx={{ 
+            mt: 0.5,
+            color:'text.primary', 
+            fontWeight:'bold',
+            userSelect: 'none',
+            transition: 'all 0.2s ease',
+          }}
+        >
           {description}
         </Typography>
       </Box>

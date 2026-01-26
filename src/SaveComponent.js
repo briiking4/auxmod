@@ -24,7 +24,7 @@ import SoapIcon from '@mui/icons-material/Soap';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-import WarningIcon from '@mui/icons-material/Warning';
+import FlagIcon from '@mui/icons-material/Flag';
 
 import ReactGA from 'react-ga4';
 import { Helmet } from 'react-helmet';
@@ -462,27 +462,29 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                       }}
                     >
                       {[
-                        { icon: <WarningIcon />, name:'check manually', label: 'Manual Check' },
-                        { icon: <SoapIcon sx={{ transform: 'translateY(-2px)' }} />, name:'clean version', label: 'Clean version' },
-                        { icon: <FactCheckIcon />, name:'whitelist', label: 'Allowed word(s)' },  
+                        { icon: <FlagIcon />, name:'check manually', label: 'Review Manually', toolTip:'Flagged for review — no profanity detected, but track is marked explicit.'},
+                        { icon: <SoapIcon sx={{ transform: 'translateY(-2px)' }} />, name:'clean version', label: 'Clean version', toolTip: 'Replaced with clean version' },
+                        { icon: <FactCheckIcon />, name:'whitelist', label: 'Allowed word(s)', toolTip: 'Contains allowed profanity' },  
                       ]
                       .filter(item => appearingReasons.has(item.name))
                       .map((item, index) => (
-                        <Chip
-                          key={index}
-                          icon={item.icon}
-                          label={item.label}
-                          variant={selectedReasons.includes(item.name) ? 'contained' : 'outlined'}
-                          color={selectedReasons.includes(item.name) ? 'text.primary' : 'default'}
-                          sx={{borderColor:'black'}}
-                          onClick={() => {
-                            setSelectedReasons(prev =>
-                              prev.includes(item.name)
-                                ? prev.filter(r => r !== item.name)
-                                : [...prev, item.name]
-                            );
-                          }}
-                        />
+                        <Tooltip title= {item.toolTip}>
+                          <Chip
+                            key={index}
+                            icon={item.icon}
+                            label={item.label}
+                            variant={selectedReasons.includes(item.name) ? 'contained' : 'outlined'}
+                            color={selectedReasons.includes(item.name) ? 'text.primary' : 'default'}
+                            sx={{borderColor:'black'}}
+                            onClick={() => {
+                              setSelectedReasons(prev =>
+                                prev.includes(item.name)
+                                  ? prev.filter(r => r !== item.name)
+                                  : [...prev, item.name]
+                              );
+                            }}
+                          />
+                        </Tooltip>
                       ))}
                     </Box>
                   </>

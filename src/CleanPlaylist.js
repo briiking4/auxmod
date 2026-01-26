@@ -1,9 +1,10 @@
 import pLimit from 'p-limit';
 import { backOff } from 'exponential-backoff';
 import spotifyApi from './spotifyApi';
-import AnalyzeSong from './AnalyzeSong.js';
+// import AnalyzeSong from './AnalyzeSong.js';
 import ReactGA from 'react-ga4';
 import AnalyzeSongsBatch from './AnalyzeSongsBatch.js'
+
 
 // rate-limited API wrapper
 const rateLimitedApi = {
@@ -28,10 +29,9 @@ const rateLimitedApi = {
   }
 };
 
-// Add delay between API calls to respect rate limits
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
+const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal) => {
+
   console.log("CLEAN PLAYLIST COMP: The user and playlist id's are:", playlistId);
   console.log("CLEAN P COMP: Chosen filters - ", chosenFilters);
 
@@ -94,27 +94,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       allTracks = allTracks.concat(items.filter(isValidTrack));
       
       totalTrackCount = response.tracks.total;
-      onProgressUpdate(2);
-      
-      if (!next) {
-        onProgressUpdate(10);
-        return allTracks;
-      }
-      
-      const fetchedSoFar = allTracks.length;
-      const remainingTracks = totalTrackCount - fetchedSoFar;
-      const expectedPages = Math.ceil(remainingTracks / 100);
-      
-      const progressStart = 2;
-      const progressEnd = 10;
-      const progressPerPage = (progressEnd - progressStart) / (expectedPages + 1);
-      let currentProgress = progressStart;
-      
-      currentProgress += progressPerPage;
-      onProgressUpdate(Math.round(currentProgress));
-      
-      let pagesFetched = 0;
-      
+   
       while (next) {
         const pagedResponse = await rateLimitedApi.call(
           spotifyApi.getPlaylistTracks.bind(spotifyApi), 
@@ -125,13 +105,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         const validTracks = pagedResponse.items.filter(isValidTrack);
         allTracks = allTracks.concat(validTracks);
         next = pagedResponse.next;
-        
-        pagesFetched++;
-        currentProgress = progressStart + ((pagesFetched + 1) * progressPerPage);
-        onProgressUpdate(Math.round(Math.min(currentProgress, progressEnd)));
-      }
+     }
       
-      onProgressUpdate(progressEnd);
       return allTracks;
     } catch (error) {
       console.error("Error fetching playlist data:", error);
@@ -141,10 +116,9 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
 
 
   const analyzeTracksData = async (tracks) => {
-    onProgressUpdate(11);
-  
-    const CHUNK_SIZE = 5;
-    const CHUNK_CONCURRENCY = 2;
+
+    const CHUNK_SIZE = 50; 
+    const CHUNK_CONCURRENCY = 1; 
     const limit = pLimit(CHUNK_CONCURRENCY);
   
     const results = {
@@ -154,17 +128,58 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     };
   
     const totalChunks = Math.ceil(tracks.length / CHUNK_SIZE);
-    let completedChunks = 0;
-    const progressStart = 11;
-    const progressEnd = 50;
-  
-    console.log(`Processing ${tracks.length} tracks in ${totalChunks} chunks of ${CHUNK_SIZE}`);
-  
-    const updateProgress = () => {
-      completedChunks++;
-      const chunkProgress = progressStart + ((progressEnd - progressStart) * (completedChunks / totalChunks));
-      onProgressUpdate(Math.round(chunkProgress));
+ 
+    console.log(`Processing ${tracks.length} tracks in chunks of ${CHUNK_SIZE}`);
+
+
+    let isPolling = false;
+    let progressInterval = null;
+
+    const pollProgress = async () => {
+      if (isPolling) return;
+      isPolling = true;
+    
+      try {
+        // Check if aborted before polling
+        if (signal?.aborted) {
+          clearInterval(progressInterval);
+          progressInterval = null;
+          return;
+        }
+    
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/progress`, {
+          signal
+        });
+        const data = await response.json();
+    
+        if (data.phase === 'cancelled') {
+          console.log("PHASE IS CANCELLED - front end cleanP");
+          clearInterval(progressInterval);
+          progressInterval = null;
+          onProgressUpdate?.(0, null, 0, 0);
+          return;
+        }
+    
+        onProgressUpdate?.(
+          data.percentage,
+          data.phase,
+          data.batchNumber,
+          data.totalBatches
+        );
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.log('Progress polling aborted');
+          clearInterval(progressInterval);
+          progressInterval = null;
+          return;
+        }
+        console.error('Error polling progress:', error);
+      } finally {
+        isPolling = false;
+      }
     };
+    // start polling every 1000 ms
+    progressInterval = setInterval(pollProgress, 1000);
   
     const chunkPromises = [];
   
@@ -173,6 +188,9 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       const chunkNumber = Math.floor(i / CHUNK_SIZE) + 1;
   
       chunkPromises.push(limit(async () => {
+        if (signal?.aborted) {
+          throw new DOMException('Aborted', 'AbortError');
+        }
         const chunkStart = Date.now();
   
         const songs = chunk.map(trackItem => {
@@ -193,14 +211,22 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         console.log(`ANALYZING CHUNK ${chunkNumber}/${totalChunks} (${songs.length} songs)`);
   
         try {
-          const chunkResults = await AnalyzeSongsBatch(songs, chosenFilters);
-          console.log(`CHUNK ${chunkNumber} RESULTS:`, chunkResults);
-  
+          const chunkResults = await AnalyzeSongsBatch(
+            songs, 
+            chosenFilters,
+            {
+            batchNumber: chunkNumber,
+            totalBatches: totalChunks,
+            totalSongs: tracks.length
+          },
+          signal
+          );
+         
+          console.log(`BATCH ${chunkNumber} RESULTS:`, chunkResults);
+
           const cleanCheckLimit = pLimit(2);
           const classifyLimit = pLimit(8);
-
-          console.log("CHUNK RESULTS", chunkResults)
-  
+    
           const classifiedResults = await Promise.all(chunkResults.map((item, index) =>
             classifyLimit(async () => {
               const trackItem = chunk[index];
@@ -244,7 +270,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
               }
   
               if (failedFilter) {
-                let replaceCleanVersion = (chosenFilters.find(filter => filter.id === "profanity")).options.replaceClean
+                let replaceCleanVersion = (chosenFilters.find(filter => filter.id === "profanity"))?.options.replaceClean
                 if ((track.reason.length === 1) && (track.reason[0] === "Profanity") && replaceCleanVersion && (track.trackAnalysis.profanity?.customBlacklistedWordsFound.length === 0)) {
                   if (track.explicit) {
                     return { type: 'needs-clean-search', track };
@@ -283,23 +309,34 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
             }
           }
         } catch (error) {
+
+          if (error.name === 'AbortError') {
+            throw error; // Propagate abort
+          }
           console.error(`CHUNK ${chunkNumber} FAILED:`, error);
           chunk.forEach(trackItem => {
             const track = trackItem.track;
             track.reason = ["failed"];
             results.explicitTracks.push(track);
           });
+        } finally {
+          if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+          }
         }
   
         console.log(`CHUNK ${chunkNumber} took ${Date.now() - chunkStart}ms`);
-        updateProgress();
       }));
     }
   
     await Promise.all(chunkPromises);
-  
-    onProgressUpdate(50);
-    return results;
+    // clear interval and stop polling, clear cancel fn
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+      return results;
   };
   
   
@@ -339,9 +376,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     }
   };    
   
-  const findCleanVersions = async (tracks) => {
-    onProgressUpdate(60);
-    
+  const findCleanVersions = async (tracks) => {    
     console.log("tracks that need clean versions. in findclean: ", tracks);
     
     const foundCleanTracks = [];
@@ -352,19 +387,7 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
     for (let i = 0; i < tracks.length; i += batchSize) {
       batches.push(tracks.slice(i, i + batchSize));
     }
-    
-    const totalBatches = batches.length;
-    let completedBatches = 0;
-    const progressStart = 65;
-    const progressEnd = 95;
-    
-    onProgressUpdate(progressStart); 
-    
-    if (tracks.length === 0) {
-      onProgressUpdate(progressEnd);
-      return [];
-    }
-    
+
     for (const batch of batches) {
       const limit = pLimit(3); 
       
@@ -415,17 +438,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
           foundCleanTracks.push(result.track);
         }
       });
-      
-      completedBatches++;
-      const batchProgress = progressStart + 
-          ((progressEnd - progressStart) * (completedBatches / totalBatches));
-      onProgressUpdate(Math.round(batchProgress));
-      
-      if (completedBatches < totalBatches) {
-        await delay(200);
-      }
     }
-    
+
     return foundCleanTracks;
   };
 
@@ -462,9 +476,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
         console.log(`${stepName} took ${now - lastCheckpoint}ms`);
         lastCheckpoint = now;
       };
-  
-      onProgressUpdate(1);
-  
+      onProgressUpdate(0, 'start');
+
       console.log("Fetching playlist tracks");
       const playlistTracks = await getPlaylistTracks(id);
       logStep("getPlaylistTracks");
@@ -479,13 +492,20 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
       logStep("preCheckCache");
   
       console.log("Finding clean versions for", stillNeedSearch.length, "tracks");
-      const newFoundCleanTracks = stillNeedSearch.length > 0 
-        ? await findCleanVersions(stillNeedSearch)
-        : [];
+      let newFoundCleanTracks = [];
+
+      if(stillNeedSearch.length > 0 ){
+        onProgressUpdate(95, 'finding-clean-versions');
+        newFoundCleanTracks = await findCleanVersions(stillNeedSearch)
+      }else{
+        newFoundCleanTracks = []
+      }
       logStep("findCleanVersions");
+
   
       console.log("Finalizing playlist");
-      onProgressUpdate(96);
+      onProgressUpdate(98, 'finalizing');
+
   
       // Sorting & combining
       const trackUris = new Set();
@@ -523,12 +543,10 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate) => {
   
       logStep("sorting & combining");
   
-      onProgressUpdate(98);
-      setTimeout(() => onProgressUpdate(100), 200);
-  
       const totalEnd = Date.now();
       console.log(`Total cleaning time: ${totalEnd - totalStart}ms`);
-  
+      onProgressUpdate(100, 'complete');
+
       ReactGA.event({
         category: "Playlist",
         action: "Playlist Clean Duration",

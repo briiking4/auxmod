@@ -14,7 +14,9 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
   const [loading, setLoading] = useState(false);
   const [filterState, setFilterState] = useState({});
   const [settingsApplied, setSettingsApplied] = useState(false);
-  
+
+  const cleaningProgress = progress;
+
   // Initialize filter state from config
   useEffect(() => {
     const initialState = {};
@@ -147,6 +149,36 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
   
   // Sort categories by their order property
   const sortedCategories = [...filterCategories].sort((a, b) => a.order - b.order);
+
+  const loadingMessage = ({
+    phase,
+    currentBatch,
+    totalBatches,
+    totalTracks
+  }) => {
+
+    if(phase === 'start'){
+      return 'Getting ready!'
+    }
+  
+    if (phase === 'starting-analysis') {
+      return `Analyzing songs for batch ${currentBatch} / ${totalBatches}. You can keep this tab open while we work.`;
+    }
+
+    if (phase === 'finding-clean-versions') {
+      return `Searching for clean versions...`;
+    }
+
+    if (phase === 'finalizing') {
+      return `Finalizing new playlist...`;
+    }
+
+    if (phase === 'complete') {
+      return `Done!`;
+    }
+
+  };
+  
   
   return (
     <>
@@ -217,7 +249,7 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
                     animation: 'pulse 1.5s infinite ease-in-out'
                   }} 
                 />
-                {`${Math.round(progress)}%`}
+                {`${Math.round(cleaningProgress.percentage)}%`}
               </>
             ) : (
               <>
@@ -231,7 +263,7 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
         {loading && (
           <LinearProgress 
             variant="determinate" 
-            value={progress} 
+            value={cleaningProgress.percentage} 
             sx={{ 
               position: 'absolute',
               top: 0,
@@ -247,12 +279,18 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
         )}
       </Box>
       <Box sx={{py:2}}>
-        {
-        chosenPlaylist.total > 150 && loading &&
+      {loading && (
+        <Typography sx={{fontWeight: 'bold'}}>
+            {loadingMessage({
+              phase: cleaningProgress.phase,
+              currentBatch: cleaningProgress.batchNumber,
+              totalBatches: cleaningProgress.totalBatches,
+              totalTracks: chosenPlaylist.total
+            })}
+          
+        </Typography>
+      )}
 
-        <Typography>Please sit tight, this will take a few minutes.</Typography>
-
-        }
       </Box>
     </Container>
     </>
