@@ -694,7 +694,7 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
 
         analysisResults[index] = {
           status: moderationResult.status,
-          lyrics: lyrics,
+          // lyrics: lyrics,
           sexually_explicit: moderationResult.sexual,
           profanity: profanityResult,
           violence: moderationResult.violence,
@@ -707,7 +707,7 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
     songsWithoutLyrics.forEach(({ index, song, error }) => {
       analysisResults[index] = {
         status: 'no-lyrics',
-        lyrics: null,
+        // lyrics: null,
         sexually_explicit: null,
         profanity: null,
         violence: null,
