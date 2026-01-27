@@ -662,16 +662,13 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
                 console.error('Profanity check failed:', error.message);
                 return null;
               })
-              .finally(async () => {
-                // Update progress in Firestore
-                await progressRef.update({
-                  processedProfanitySongs: admin.firestore.FieldValue.increment(1)
-                });
-              })
           );
     
           const results = await Promise.all(profanityPromises);
           console.log('Profanity finished');
+          await progressRef.update({
+            processedProfanitySongs: admin.firestore.FieldValue.increment(lyricsArray.length)
+          });
           return results;
         })()
       : Promise.resolve([]);
