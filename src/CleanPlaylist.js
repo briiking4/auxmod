@@ -564,12 +564,12 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
       }
       onProgressUpdate(100, 'complete');
 
-      try {
-        await deleteDoc(doc(db, 'progress', sessionId));
-        console.log('Deleted progress document:', sessionId);
-      } catch (error) {
-        console.error('Error deleting progress document:', error);
-      }
+      // try {
+      //   await deleteDoc(doc(db, 'progress', sessionId));
+      //   console.log('Deleted progress document:', sessionId);
+      // } catch (error) {
+      //   console.error('Error deleting progress document:', error);
+      // }
 
       ReactGA.event({
         category: "Playlist",
