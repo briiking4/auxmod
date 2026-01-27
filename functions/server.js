@@ -499,7 +499,7 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
     console.log('Client aborted request');
   });
   
-  res.on('close', () => {
+res.on('close', () => {
     if (!res.writableEnded) {
       aborted = true;
       console.log('Response closed early');

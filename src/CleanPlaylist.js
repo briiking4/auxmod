@@ -180,14 +180,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
         );
       }
     });
-  
-    // Cleanup listener when done or aborted
-    if (signal) {
-      signal.addEventListener('abort', () => {
-        unsubscribe();
-      });
-    }
-  
 
     const chunkPromises = [];
   
@@ -198,9 +190,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
       chunkPromises.push(limit(async () => {
         if (signal?.aborted) {
           throw new DOMException('Aborted', 'AbortError');
-        }
-        if (chunkNumber > 1) {
-          await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
         }
     
         const chunkStart = Date.now();
@@ -502,11 +491,11 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
       let newFoundCleanTracks = [];
 
       if(stillNeedSearch.length > 0 ){
-        if (sessionId) {
-          await updateDoc(doc(db, 'progress', sessionId), {
-            currentPhase: 'finding-clean-versions'
-          });
-        }
+        // if (sessionId) {
+        //   await updateDoc(doc(db, 'progress', sessionId), {
+        //     currentPhase: 'finding-clean-versions'
+        //   });
+        // }
         onProgressUpdate(95, 'finding-clean-versions');
         newFoundCleanTracks = await findCleanVersions(stillNeedSearch)
       }else{
@@ -516,11 +505,11 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
 
   
       console.log("Finalizing playlist");
-      if (sessionId) {
-        await updateDoc(doc(db, 'progress', sessionId), {
-          currentPhase: 'finalizing'
-        });
-      }
+      // if (sessionId) {
+      //   await updateDoc(doc(db, 'progress', sessionId), {
+      //     currentPhase: 'finalizing'
+      //   });
+      // }
       onProgressUpdate(98, 'finalizing');
   
       // Sorting & combining
