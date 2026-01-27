@@ -21,15 +21,19 @@ import PQueue from 'p-queue';
 import { encode } from "gpt-tokenizer";
 import { acquire, release } from '../src/openaiLimiter.js';
 import { v4 as uuidv4 } from 'uuid';
-
-// going to be for firebase integration, pending 
-
-// import { db } from "./firebase"; 
-// import { doc, setDoc } from "firebase/firestore";
-
-
+import admin from 'firebase-admin';
 
 dotenv.config()
+
+// Initialize Firebase Admin
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const db = admin.firestore();
+
 
 let prod = true; 
 
@@ -38,6 +42,7 @@ var client_id = process.env.SPOTIFY_CLIENT_ID;
 var client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 const redirect_uri = prod ? process.env.REDIRECT_URI : 'http://127.0.0.1:3333/api/callback';
 const corsOrigin = prod ? 'https://auxmod.netlify.app' : '*' 
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, 
@@ -201,18 +206,6 @@ app.post('/api/getPosthogUser', async (req, res) => {
 //   });
 //   console.log("New user created! +", name);
 // }
-
-let analysisProgress = {
-  currentPhase: null,
-  batchNumber: 0,
-  totalBatches: 0,
-  totalSongs: 0,
-  processedModerationSongs: 0,
-  processedProfanitySongs: 0,
-  shouldCheckModeration: false,
-  shouldCheckProfanity: false
-};
-
 
 
 // Lyrics fetching function
@@ -503,21 +496,23 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
 
   req.on('aborted', () => {
     aborted = true;
-    analysisProgress.currentPhase = 'cancelled';
     console.log('Client aborted request');
   });
   
   res.on('close', () => {
     if (!res.writableEnded) {
       aborted = true;
-      analysisProgress.currentPhase = 'cancelled';
       console.log('Response closed early');
     }
   });
 
   const isAborted = () => aborted;
 
-  const { songs, chosenFilters, batchContext } = req.body;
+  const { songs, chosenFilters, batchContext, sessionId } = req.body;
+
+  if (!sessionId) {
+    return res.status(400).json({ error: 'Missing sessionId' });
+  }
 
   const profanityFilter = chosenFilters?.find(filter => filter.label === "Profanity");
   const violenceFilter = chosenFilters?.find(filter => filter.label === "Violence");
@@ -530,26 +525,33 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
   const whitelist = profanityFilter?.options?.whitelist || [];
   const blacklist = profanityFilter?.options?.blacklist || [];
 
-    // ===== INITIALIZE OR UPDATE PROGRESS =====
-  // Only reset on first batch
+  const progressRef = db.collection('progress').doc(sessionId);
+
+
+  // Initialize progress on first batch
   if (!batchContext || batchContext.batchNumber === 1) {
-    analysisProgress.totalSongs = batchContext?.totalSongs || songs.length;
-    analysisProgress.totalModerationChunks = 0;
-    analysisProgress.processedModerationSongs = 0;
-    analysisProgress.processedProfanitySongs = 0;
-    analysisProgress.shouldCheckModeration = shouldCheckModeration;
-    analysisProgress.shouldCheckProfanity = shouldCheckProfanity;
-    analysisProgress.currentPhase = 'start';
-    analysisProgress.startTime = Date.now();
+    await progressRef.set({
+      totalSongs: batchContext?.totalSongs || songs.length,
+      totalModerationChunks: 0,
+      processedModerationSongs: 0,
+      processedProfanitySongs: 0,
+      shouldCheckModeration: shouldCheckModeration,
+      shouldCheckProfanity: shouldCheckProfanity,
+      currentPhase: 'start',
+      startTime: admin.firestore.FieldValue.serverTimestamp(),
+      batchNumber: 1,
+      totalBatches: batchContext?.totalBatches || 1,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
   }
   
-  if(batchContext){
-    analysisProgress.batchNumber = batchContext.batchNumber;
-    analysisProgress.totalBatches = batchContext.totalBatches;
-
+   // Update batch number
+   if (batchContext) {
+    await progressRef.update({
+      batchNumber: batchContext.batchNumber,
+      totalBatches: batchContext.totalBatches
+    });
   }
-
-  // ===== END INITIALIZATION =====
 
 
   if (!songs || !Array.isArray(songs) || songs.length === 0) {
@@ -581,13 +583,66 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
     if (songsWithLyrics.length > 0) {
 
       const lyricsArray = songsWithLyrics.map(s => s.lyrics);
-      analysisProgress.currentPhase = 'starting-analysis';
+
+      // Update phase
+      await progressRef.update({ currentPhase: 'starting-analysis' });
+
+      async function checkModerationBatch(lyricsArray, isAborted) {
+        const chunks = chunkLyricsByTokens(lyricsArray);
+        const results = [];
+      
+        // setting total chunks to progress firestore
+        await progressRef.update({ totalModerationChunks: chunks.length });
+      
+      
+        for (let i = 0; i < chunks.length; i++) {
+          // stop new chunks if it was aborted 
+          if (isAborted()) {
+            console.log('Moderation aborted — stopping before next chunk');
+            break; 
+          }
+          console.log("current chunk = ", i)
+      
+          const chunk = chunks[i];
+      
+      
+          try {
+            const moderation = await retry(() => runModeration(chunk));
+      
+            await progressRef.update({
+              processedModerationSongs: admin.firestore.FieldValue.increment(chunk.length)
+            });
+      
+      
+            const chunkResults = moderation.results.map(r => ({
+              sexual: r.category_scores?.sexual ?? null,
+              violence: r.category_scores?.violence ?? null,
+              self_harm: r.category_scores?.['self-harm'] ?? null,
+              status: 'success'
+            }));
+      
+            results.push(...chunkResults);
+          } catch (err) {
+            const failedResults = chunk.map(() => ({
+              sexual: null,
+              violence: null,
+              self_harm: null,
+              status: 'failed'
+            }));
+      
+            results.push(...failedResults);
+          }
+        }
+      
+        return results;
+      }
+            
 
       const moderationPromise = shouldCheckModeration
       ? (async () => {
           try {
             console.log('Moderation check started');
-            return await checkModerationBatch(lyricsArray, isAborted);
+            return await checkModerationBatch(lyricsArray, isAborted );
           } catch (e) {
             console.error('Moderation check failed', e);
             return [];
@@ -607,8 +662,11 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
                 console.error('Profanity check failed:', error.message);
                 return null;
               })
-              .finally(() => {
-                analysisProgress.processedProfanitySongs++;
+              .finally(async () => {
+                // Update progress in Firestore
+                await progressRef.update({
+                  processedProfanitySongs: admin.firestore.FieldValue.increment(1)
+                });
               })
           );
     
@@ -688,60 +746,6 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
     });
   }
 });
-
-app.get('/api/progress', (req, res) => {
-
-  const { 
-    totalSongs,  
-    processedModerationSongs,
-    processedProfanitySongs,
-    shouldCheckModeration,
-    shouldCheckProfanity
-  } = analysisProgress;
-
-
-  console.log("ANALYSIS PROGRESS: ", analysisProgress)
-  
-  let percentage = 0;
-
-  if (analysisProgress.currentPhase === 'starting-analysis') {
-    let contentProgress = 0;
-  
-  if (shouldCheckModeration && shouldCheckProfanity) {
-    // Both run in parallel
-    // Take the MIN (only count song as done when BOTH checks complete)
-    const modProgress = (processedModerationSongs / totalSongs) * 100;
-    const profProgress = (processedProfanitySongs / totalSongs) * 100;
-    contentProgress = Math.min(modProgress, profProgress); 
-  } else if (shouldCheckModeration) {
-    contentProgress = (processedModerationSongs / totalSongs) * 100;
-  } else if (shouldCheckProfanity) {
-    contentProgress = (processedProfanitySongs / totalSongs) * 100;
-  }
-  
-  // Map 0-100% content progress to 5-90% overall progress
-  percentage = 5 + (contentProgress * 0.85);
-  }
-
-  res.json({ 
-    percentage: Math.round(percentage), 
-    phase: analysisProgress.currentPhase ,
-    batchNumber: analysisProgress.batchNumber,
-    totalBatches: analysisProgress.totalBatches
-  });
-});
-
-// app.post('/api/cancel-analysis', (req, res) => {
-//   console.log("Analysis Canceled - endpoint reached")
-//   analysisProgress.currentPhase = 'cancelled';
-//   analysisProgress.totalSongs = 0;
-//   analysisProgress.processedModerationSongs = 0;
-//   analysisProgress.processedProfanitySongs = 0;
-//   analysisProgress.batchNumber = 0;
-//   analysisProgress.totalBatches = 0;
-  
-//   res.json({ status: 'cancelled' });
-// });
 
 
 function removeDuplicateLines(str) {
@@ -869,56 +873,6 @@ async function runModeration(chunk) {
     input: chunkTextArray,
   });
 }
-
-async function checkModerationBatch(lyricsArray, isAborted) {
-  const chunks = chunkLyricsByTokens(lyricsArray);
-  const results = [];
-  // setting total chunks
-  analysisProgress.totalModerationChunks = chunks.length;
-
-
-  for (let i = 0; i < chunks.length; i++) {
-    // stop new chunks if it was aborted 
-    if (isAborted()) {
-      console.log('Moderation aborted — stopping before next chunk');
-      break; 
-    }
-    console.log("current chunk = ", i)
-
-    const chunk = chunks[i];
-
-
-    try {
-      const moderation = await retry(() => runModeration(chunk));
-      // chunk is done being processed, set it to done in progress
-      analysisProgress.processedModerationChunks = i + 1;
-      analysisProgress.processedModerationSongs += chunk.length; 
-
-
-      const chunkResults = moderation.results.map(r => ({
-        sexual: r.category_scores?.sexual ?? null,
-        violence: r.category_scores?.violence ?? null,
-        self_harm: r.category_scores?.['self-harm'] ?? null,
-        status: 'success'
-      }));
-
-      results.push(...chunkResults);
-    } catch (err) {
-      const failedResults = chunk.map(() => ({
-        sexual: null,
-        violence: null,
-        self_harm: null,
-        status: 'failed'
-      }));
-
-      results.push(...failedResults);
-    }
-  }
-
-  return results;
-}
-
-
 
 
 app.post('/api/refresh_token', async (req, res) => {

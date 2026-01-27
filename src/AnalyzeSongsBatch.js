@@ -3,7 +3,8 @@ const AnalyzeSongsBatch = async (songs, chosenFilters, batchContext = null, sign
     const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/analyze-songs-batch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ songs, chosenFilters, batchContext }),
+      body: JSON.stringify({ songs, chosenFilters, batchContext, sessionId: batchContext?.sessionId  // Pass sessionId to backend
+    }),
       signal
     });
 

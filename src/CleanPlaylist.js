@@ -4,6 +4,11 @@ import spotifyApi from './spotifyApi';
 // import AnalyzeSong from './AnalyzeSong.js';
 import ReactGA from 'react-ga4';
 import AnalyzeSongsBatch from './AnalyzeSongsBatch.js'
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { db } from './firebase';
+import { deleteDoc } from 'firebase/firestore';
+
+
 
 
 // rate-limited API wrapper
@@ -34,6 +39,11 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
 
   console.log("CLEAN PLAYLIST COMP: The user and playlist id's are:", playlistId);
   console.log("CLEAN P COMP: Chosen filters - ", chosenFilters);
+  const sessionId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  const progressRef = doc(db, 'progress', sessionId);
+
+
 
   let playlistName = '';
   let totalTrackCount = 0;
@@ -130,57 +140,55 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
     const totalChunks = Math.ceil(tracks.length / CHUNK_SIZE);
  
     console.log(`Processing ${tracks.length} tracks in chunks of ${CHUNK_SIZE}`);
+  
+    const unsubscribe = onSnapshot(progressRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log('Raw data from Firestore:', data);
+        
+        // Convert strings to numbers
+        const totalSongs = data.totalSongs || 0;
+        const processedModerationSongs = data.processedModerationSongs || 0;
+        const processedProfanitySongs = data.processedProfanitySongs || 0;
+        
+        let percentage = 0;
 
-
-    let isPolling = false;
-    let progressInterval = null;
-
-    const pollProgress = async () => {
-      if (isPolling) return;
-      isPolling = true;
-    
-      try {
-        // Check if aborted before polling
-        if (signal?.aborted) {
-          clearInterval(progressInterval);
-          progressInterval = null;
-          return;
+        if (data.currentPhase === 'starting-analysis') {
+          let contentProgress = 0;
+        
+          if (data.shouldCheckModeration && data.shouldCheckProfanity) {
+            // Both run in parallel
+            // Take the MIN (only count song as done when BOTH checks complete)
+            const modProgress = (processedModerationSongs / totalSongs) * 100;
+            const profProgress = (processedProfanitySongs / totalSongs) * 100;
+            contentProgress = Math.min(modProgress, profProgress); 
+          } else if (data.shouldCheckModeration) {
+            contentProgress = (processedModerationSongs / totalSongs) * 100;
+          } else if (data.shouldCheckProfanity) {
+            contentProgress = (processedProfanitySongs / totalSongs) * 100;
+          }
+          
+          // Map 0-100% content progress to 5-90% overall progress
+          percentage = 5 + (contentProgress * 0.85);
         }
-    
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/progress`, {
-          signal
-        });
-        const data = await response.json();
-    
-        if (data.phase === 'cancelled') {
-          console.log("PHASE IS CANCELLED - front end cleanP");
-          clearInterval(progressInterval);
-          progressInterval = null;
-          onProgressUpdate?.(0, null, 0, 0);
-          return;
-        }
-    
+                
         onProgressUpdate?.(
-          data.percentage,
-          data.phase,
+          Math.round(percentage),
+          data.currentPhase,
           data.batchNumber,
           data.totalBatches
         );
-      } catch (error) {
-        if (error.name === 'AbortError') {
-          console.log('Progress polling aborted');
-          clearInterval(progressInterval);
-          progressInterval = null;
-          return;
-        }
-        console.error('Error polling progress:', error);
-      } finally {
-        isPolling = false;
       }
-    };
-    // start polling every 1000 ms
-    progressInterval = setInterval(pollProgress, 1000);
+    });
   
+    // Cleanup listener when done or aborted
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        unsubscribe();
+      });
+    }
+  
+
     const chunkPromises = [];
   
     for (let i = 0; i < tracks.length; i += CHUNK_SIZE) {
@@ -217,7 +225,8 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
             {
             batchNumber: chunkNumber,
             totalBatches: totalChunks,
-            totalSongs: tracks.length
+            totalSongs: tracks.length,
+            sessionId: sessionId  // Pass sessionId to backend
           },
           signal
           );
@@ -319,11 +328,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
             track.reason = ["failed"];
             results.explicitTracks.push(track);
           });
-        } finally {
-          if (progressInterval) {
-            clearInterval(progressInterval);
-            progressInterval = null;
-          }
         }
   
         console.log(`CHUNK ${chunkNumber} took ${Date.now() - chunkStart}ms`);
@@ -331,12 +335,11 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
     }
   
     await Promise.all(chunkPromises);
-    // clear interval and stop polling, clear cancel fn
-    if (progressInterval) {
-      clearInterval(progressInterval);
-      progressInterval = null;
-    }
-      return results;
+
+    // Cleanup listener when all done
+    unsubscribe();
+    
+    return results;
   };
   
   
@@ -495,6 +498,11 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
       let newFoundCleanTracks = [];
 
       if(stillNeedSearch.length > 0 ){
+        if (sessionId) {
+          await updateDoc(doc(db, 'progress', sessionId), {
+            currentPhase: 'finding-clean-versions'
+          });
+        }
         onProgressUpdate(95, 'finding-clean-versions');
         newFoundCleanTracks = await findCleanVersions(stillNeedSearch)
       }else{
@@ -504,8 +512,12 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
 
   
       console.log("Finalizing playlist");
+      if (sessionId) {
+        await updateDoc(doc(db, 'progress', sessionId), {
+          currentPhase: 'finalizing'
+        });
+      }
       onProgressUpdate(98, 'finalizing');
-
   
       // Sorting & combining
       const trackUris = new Set();
@@ -545,7 +557,19 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
   
       const totalEnd = Date.now();
       console.log(`Total cleaning time: ${totalEnd - totalStart}ms`);
+      if (sessionId) {
+        await updateDoc(doc(db, 'progress', sessionId), {
+          currentPhase: 'complete'
+        });
+      }
       onProgressUpdate(100, 'complete');
+
+      try {
+        await deleteDoc(doc(db, 'progress', sessionId));
+        console.log('Deleted progress document:', sessionId);
+      } catch (error) {
+        console.error('Error deleting progress document:', error);
+      }
 
       ReactGA.event({
         category: "Playlist",

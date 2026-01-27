@@ -119,7 +119,7 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
   };
 
   const handleCleanVersionCheck = (isChecked) => {
-    console.log("Hnadling clean version check in set filters", isChecked);
+    console.log("Handling clean version check in set filters", isChecked);
     setFilterState(prevState => {
       if (!prevState.profanity) return prevState;
       
@@ -158,11 +158,13 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
   }) => {
 
     if(phase === 'start'){
-      return 'Getting ready!'
+      return 'Preparing for analysis...'
     }
   
     if (phase === 'starting-analysis') {
-      return `Analyzing songs for batch ${currentBatch} / ${totalBatches}. You can keep this tab open while we work.`;
+      const timeEstimate = totalBatches; // 1 batch = ~ 1 min
+      
+      return `Analyzing ${totalTracks} songs (about ${timeEstimate} ${timeEstimate === 1 ? 'min' : 'mins'})...`;
     }
 
     if (phase === 'finding-clean-versions') {
