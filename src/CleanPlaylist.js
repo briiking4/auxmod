@@ -199,6 +199,10 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
         if (signal?.aborted) {
           throw new DOMException('Aborted', 'AbortError');
         }
+        if (chunkNumber > 1) {
+          await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
+        }
+    
         const chunkStart = Date.now();
   
         const songs = chunk.map(trackItem => {
