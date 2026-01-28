@@ -41,10 +41,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
   console.log("CLEAN P COMP: Chosen filters - ", chosenFilters);
   const sessionId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  const progressRef = doc(db, 'progress', sessionId);
-
-
-
   let playlistName = '';
   let totalTrackCount = 0;
   
@@ -125,10 +121,58 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
   };
 
 
+  const callAnalyzeBatchWithRetry = async (
+    songs,
+    chosenFilters,
+    batchContext,
+    signal,
+    maxRetries = 5
+  ) => {
+    let attempt = 0;
+  
+    while (attempt < maxRetries) {
+      try {
+        return await AnalyzeSongsBatch(
+          songs,
+          chosenFilters,
+          batchContext,
+          signal
+        );
+      } catch (err) {
+        if (signal?.aborted) throw err;
+
+        console.log("Error obj in analyze songs batch", err)
+  
+        const status = err?.response?.status;
+  
+        if (status === 429) {
+          console.log("Status is a 429... retry")
+          attempt++;
+  
+          const retryAfterMs =
+            err.response?.data?.retryAfterMs ?? (1500 * attempt);
+  
+          console.warn(
+            `Batch ${batchContext.batchNumber} rate limited. ` +
+            `Retrying in ${retryAfterMs}ms (attempt ${attempt}/${maxRetries})`
+          );
+  
+          await new Promise(r => setTimeout(r, retryAfterMs));
+          continue;
+        }
+          throw err;
+      }
+    }
+  
+    throw new Error(
+      `Batch ${batchContext.batchNumber} failed after ${maxRetries} retries due to rate limits`
+    );
+  };
+  
   const analyzeTracksData = async (tracks) => {
 
-    const CHUNK_SIZE = 10; 
-    const CHUNK_CONCURRENCY = 1; 
+    const CHUNK_SIZE = 7; 
+    const CHUNK_CONCURRENCY = 2; 
     const limit = pLimit(CHUNK_CONCURRENCY);
   
     const results = {
@@ -136,51 +180,13 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
       cleanTracks: [],
       tracksNeedingCleanSearch: []
     };
-  
-    const totalChunks = Math.ceil(tracks.length / CHUNK_SIZE);
+
+    let processedSongs = 0;
+    const totalBatches = Math.ceil(tracks.length / CHUNK_SIZE);
+
  
     console.log(`Processing ${tracks.length} tracks in chunks of ${CHUNK_SIZE}`);
-  
-    const unsubscribe = onSnapshot(progressRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        console.log('Raw data from Firestore:', data);
-        
-        // Convert strings to numbers
-        const totalSongs = data.totalSongs || 0;
-        const processedModerationSongs = data.processedModerationSongs || 0;
-        const processedProfanitySongs = data.processedProfanitySongs || 0;
-        
-        let percentage = 0;
-
-        if (data.currentPhase === 'starting-analysis') {
-          let contentProgress = 0;
-        
-          if (data.shouldCheckModeration && data.shouldCheckProfanity) {
-            // Both run in parallel
-            // Take the MIN (only count song as done when BOTH checks complete)
-            const modProgress = (processedModerationSongs / totalSongs) * 100;
-            const profProgress = (processedProfanitySongs / totalSongs) * 100;
-            contentProgress = Math.min(modProgress, profProgress); 
-          } else if (data.shouldCheckModeration) {
-            contentProgress = (processedModerationSongs / totalSongs) * 100;
-          } else if (data.shouldCheckProfanity) {
-            contentProgress = (processedProfanitySongs / totalSongs) * 100;
-          }
           
-          // Map 0-100% content progress to 5-90% overall progress
-          percentage = 5 + (contentProgress * 0.85);
-        }
-                
-        onProgressUpdate?.(
-          Math.round(percentage),
-          data.currentPhase,
-          data.batchNumber,
-          data.totalBatches
-        );
-      }
-    });
-
     const chunkPromises = [];
   
     for (let i = 0; i < tracks.length; i += CHUNK_SIZE) {
@@ -188,9 +194,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
       const chunkNumber = Math.floor(i / CHUNK_SIZE) + 1;
   
       chunkPromises.push(limit(async () => {
-        if (signal?.aborted) {
-          throw new DOMException('Aborted', 'AbortError');
-        }
     
         const chunkStart = Date.now();
   
@@ -209,20 +212,22 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
           };
         });
   
-        console.log(`ANALYZING CHUNK ${chunkNumber}/${totalChunks} (${songs.length} songs)`);
+        console.log(`ANALYZING CHUNK ${chunkNumber}/${totalBatches} (${songs.length} songs)`);
   
         try {
-          const chunkResults = await AnalyzeSongsBatch(
-            songs, 
+
+          const chunkResults = await callAnalyzeBatchWithRetry(
+            songs,
             chosenFilters,
             {
-            batchNumber: chunkNumber,
-            totalBatches: totalChunks,
-            totalSongs: tracks.length,
-            sessionId: sessionId  // Pass sessionId to backend
-          },
-          signal
+              batchNumber: chunkNumber,
+              totalBatches: totalBatches,
+              totalSongs: tracks.length,
+              sessionId: sessionId
+            },
+            signal
           );
+          
          
           console.log(`BATCH ${chunkNumber} RESULTS:`, chunkResults);
 
@@ -290,9 +295,9 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
                   return { type: 'explicit', track };
                 }
               } else {
-                if(track.explicit && (track.trackAnalysis.profanity?.whitelistedWordsFound.length === 0)){
-                  track.reason.push("check manually");
-                }
+                  if(track.explicit && track.trackAnalysis?.profanity && track.trackAnalysis.profanity.whitelistedWordsFound?.length === 0){
+                    track.reason.push("check manually");
+                  }                 
                 track.reason.push("passed filters");
                 return { type: 'clean', track };
               }
@@ -310,6 +315,12 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
               results.tracksNeedingCleanSearch.push(result.track);
             }
           }
+
+        // Update progress after each batch completes
+        processedSongs += chunk.length;
+        const percentage = 5 + Math.floor((processedSongs / tracks.length) * 85); // 5% to 90%
+        onProgressUpdate(percentage, 'analyzing', processedSongs);
+
         } catch (error) {
 
           if (error.name === 'AbortError') {
@@ -321,6 +332,10 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
             track.reason = ["failed"];
             results.explicitTracks.push(track);
           });
+
+          processedSongs += chunk.length;
+          const percentage = 5 + Math.floor((processedSongs / tracks.length) * 85);
+          onProgressUpdate(percentage, 'starting-analysis');
         }
   
         console.log(`CHUNK ${chunkNumber} took ${Date.now() - chunkStart}ms`);
@@ -329,8 +344,6 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
   
     await Promise.all(chunkPromises);
 
-    // Cleanup listener when all done
-    unsubscribe();
     
     return results;
   };
@@ -472,15 +485,18 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
         console.log(`${stepName} took ${now - lastCheckpoint}ms`);
         lastCheckpoint = now;
       };
+      
       onProgressUpdate(0, 'start');
-
+  
       console.log("Fetching playlist tracks");
       const playlistTracks = await getPlaylistTracks(id);
       logStep("getPlaylistTracks");
+      onProgressUpdate(5, 'start');
   
       console.log("Analyzing tracks data");
       const tracksData = await analyzeTracksData(playlistTracks);
       logStep("analyzeTracksData");
+      // analyzeTracksData handles progress from 5% to 90%
   
       console.log("tracks needing clean search: ", tracksData.tracksNeedingCleanSearch);
   
@@ -489,28 +505,17 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
   
       console.log("Finding clean versions for", stillNeedSearch.length, "tracks");
       let newFoundCleanTracks = [];
-
-      if(stillNeedSearch.length > 0 ){
-        // if (sessionId) {
-        //   await updateDoc(doc(db, 'progress', sessionId), {
-        //     currentPhase: 'finding-clean-versions'
-        //   });
-        // }
-        onProgressUpdate(95, 'finding-clean-versions');
-        newFoundCleanTracks = await findCleanVersions(stillNeedSearch)
-      }else{
-        newFoundCleanTracks = []
+  
+      if(stillNeedSearch.length > 0) {
+        onProgressUpdate(92, 'finding-clean-versions');
+        newFoundCleanTracks = await findCleanVersions(stillNeedSearch);
+      } else {
+        newFoundCleanTracks = [];
       }
       logStep("findCleanVersions");
-
   
       console.log("Finalizing playlist");
-      // if (sessionId) {
-      //   await updateDoc(doc(db, 'progress', sessionId), {
-      //     currentPhase: 'finalizing'
-      //   });
-      // }
-      onProgressUpdate(98, 'finalizing');
+      onProgressUpdate(96, 'finalizing');
   
       // Sorting & combining
       const trackUris = new Set();
@@ -550,20 +555,9 @@ const CleanPlaylist = async (playlistId, chosenFilters, onProgressUpdate, signal
   
       const totalEnd = Date.now();
       console.log(`Total cleaning time: ${totalEnd - totalStart}ms`);
-      if (sessionId) {
-        await updateDoc(doc(db, 'progress', sessionId), {
-          currentPhase: 'complete'
-        });
-      }
+  
       onProgressUpdate(100, 'complete');
-
-      // try {
-      //   await deleteDoc(doc(db, 'progress', sessionId));
-      //   console.log('Deleted progress document:', sessionId);
-      // } catch (error) {
-      //   console.error('Error deleting progress document:', error);
-      // }
-
+  
       ReactGA.event({
         category: "Playlist",
         action: "Playlist Clean Duration",

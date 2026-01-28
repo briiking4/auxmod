@@ -325,8 +325,16 @@ const handleOnboardingSubmit = (value) => {
 
 const handleStepNavigation = (stepIndex) => {
   console.log("Navigating to step:", stepIndex);
-  // Reset progress
-  setCleaningProgress({ percentage: 0 });
+
+    // If we're already on this step and nothing ahead is marked complete, do nothing
+    const hasFutureCompletedSteps = stepsStatus
+    .slice(stepIndex)
+    .some(status => status === true);
+
+  if (activeStep === stepIndex && !hasFutureCompletedSteps) {
+    return;
+  }
+
   
   // Reset status for steps after the one we're going back to
   const updatedStepsStatus = [...stepsStatus];
@@ -334,6 +342,7 @@ const handleStepNavigation = (stepIndex) => {
     updatedStepsStatus[i] = false;
   }
   
+  setCleaningProgress({ percentage: 0 });
   setStepsStatus(updatedStepsStatus);
   setActiveStep(stepIndex);
 };
@@ -368,14 +377,13 @@ const handleStepNavigation = (stepIndex) => {
 
       console.log("handling apply filters in APP. they are: ", filters)
 
-      const handleProgressUpdate = (progress, phase, batchNumber, totalBatches) => {
+      const handleProgressUpdate = (progress, phase, processedSongs) => {
         setCleaningProgress(prev => {
           // Only update state if these changed
           if (
             prev.percentage === progress &&
             prev.phase === phase &&
-            prev.batchNumber === batchNumber &&
-            prev.totalBatches === totalBatches
+            prev.processedSongs === processedSongs
           ) {
             return prev; // skip re-render
           }
@@ -385,8 +393,7 @@ const handleStepNavigation = (stepIndex) => {
           return {
             percentage: progress,
             phase,
-            batchNumber,
-            totalBatches
+            processedSongs
           };
         });
      };

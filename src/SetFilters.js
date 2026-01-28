@@ -152,8 +152,7 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
 
   const loadingMessage = ({
     phase,
-    currentBatch,
-    totalBatches,
+    songsCompleted,
     totalTracks
   }) => {
 
@@ -162,9 +161,17 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
     }
   
     if (phase === 'starting-analysis') {
-      const timeEstimate = totalBatches; // 1 batch = ~ 1 min
+      // const timeEstimate = totalBatches; // 1 batch = ~ 1 min
       
-      return `Analyzing ${totalTracks} songs (about ${timeEstimate} ${timeEstimate === 1 ? 'min' : 'mins'})...`;
+      // return `Analyzing ${totalTracks} songs (about ${timeEstimate} ${timeEstimate === 1 ? 'min' : 'mins'})...`;
+      return `Analyzing ${totalTracks} songs ...`;
+    }
+
+    if (phase === 'analyzing') {
+      // const timeEstimate = totalBatches; // 1 batch = ~ 1 min
+      
+      // return `Analyzing ${totalTracks} songs (about ${timeEstimate} ${timeEstimate === 1 ? 'min' : 'mins'})...`;
+      return `${songsCompleted}/${totalTracks} songs completed ...`;
     }
 
     if (phase === 'finding-clean-versions') {
@@ -285,8 +292,7 @@ export default function SetFilters({ sendStatus, onApplyFilters, sendChosenFilte
         <Typography sx={{fontWeight: 'bold'}}>
             {loadingMessage({
               phase: cleaningProgress.phase,
-              currentBatch: cleaningProgress.batchNumber,
-              totalBatches: cleaningProgress.totalBatches,
+              songsCompleted: cleaningProgress.processedSongs,
               totalTracks: chosenPlaylist.total
             })}
           

@@ -462,7 +462,7 @@ export default function SaveComponent({ sendStatus, cleanedPlaylist, chosenFilte
                       }}
                     >
                       {[
-                        { icon: <FlagIcon />, name:'check manually', label: 'Review Manually', toolTip:'Flagged for review — no profanity detected, but track is marked explicit.'},
+                        { icon: <FlagIcon />, name:'check manually', label: 'Review Manually', toolTip:"AuXmod did not detect profanity, but the track is marked explicit — review just in case"},
                         { icon: <SoapIcon sx={{ transform: 'translateY(-2px)' }} />, name:'clean version', label: 'Clean version', toolTip: 'Replaced with clean version' },
                         { icon: <FactCheckIcon />, name:'whitelist', label: 'Allowed word(s)', toolTip: 'Contains allowed profanity' },  
                       ]

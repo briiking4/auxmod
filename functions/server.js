@@ -25,14 +25,14 @@ import admin from 'firebase-admin';
 
 dotenv.config()
 
-// Initialize Firebase Admin
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+// // Initialize Firebase Admin
+// const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount)
+// });
 
-const db = admin.firestore();
+// const db = admin.firestore();
 
 
 let prod = true; 
@@ -433,271 +433,223 @@ function checkProfanity(lyrics, whitelist = [], blacklist = []) {
   }
 }
 
-const TOKEN_LIMIT = 10000; // TPM from OpenAI
-
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-const MAX_TPM = 9800; // Aggressively using 98% of the 10000 TPM limit
+const MAX_TPM = 9800;
+const WINDOW_MS = 60_000;
 
 // rolling window store
 const tokenEvents = [];
 
-async function acquireTokens(tokensNeeded) {
-  while (true) {
-    const now = Date.now();
+function tryAcquireTokens(tokensNeeded) {
+  const now = Date.now();
 
-    // remove events older than 60s
-    while (tokenEvents.length && tokenEvents[0].time < now - 60000) {
-      tokenEvents.shift();
-    }
-
-    const used = tokenEvents.reduce((a, e) => a + e.tokens, 0);
-
-    if (used + tokensNeeded <= MAX_TPM) {
-      tokenEvents.push({ time: now, tokens: tokensNeeded });
-      return;
-    }
-    
-    // Calculate when the oldest event will expire and wait (minimal polling)
-    if (tokenEvents.length > 0) {
-      const oldestTime = tokenEvents[0].time;
-      const waitTime = Math.max(5, 60000 - (now - oldestTime));
-      await sleep(Math.min(waitTime, 100)); // Minimal wait - 100ms max 
-    } else {
-      await sleep(10); // Minimal delay
-    }
+  // remove expired events
+  while (tokenEvents.length && tokenEvents[0].time < now - WINDOW_MS) {
+    tokenEvents.shift();
   }
+
+  const used = tokenEvents.reduce((sum, e) => sum + e.tokens, 0);
+
+  if (used + tokensNeeded > MAX_TPM) {
+    return false;
+  }
+
+  tokenEvents.push({ time: now, tokens: tokensNeeded });
+  return true;
 }
+
   
 function estimateTokens(text) {
   return encode(text).length;
 }
 
-
-async function retry(func, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await func();
-    } catch (error) {
-      if (error.status === 429 && i < maxRetries - 1) {
-        const delay = Math.pow(2, i) * 2000; // 1s, 2s, 4s
-        console.log(`Rate limited, waiting ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-      throw error;
-    }
+function getWaitTime(tokensNeeded) {
+  const now = Date.now();
+  
+  // Remove expired events
+  while (tokenEvents.length && tokenEvents[0].time < now - WINDOW_MS) {
+    tokenEvents.shift();
   }
+  
+  const used = tokenEvents.reduce((sum, e) => sum + e.tokens, 0);
+  const available = MAX_TPM - used;
+  
+  if (available >= tokensNeeded) {
+    return 0; // No wait needed
+  }
+  
+  // Calculate how long until oldest event expires to free up tokens
+  if (tokenEvents.length === 0) return 0;
+  
+  const oldestEvent = tokenEvents[0];
+  const timeUntilExpiry = WINDOW_MS - (now - oldestEvent.time);
+  
+  return Math.max(timeUntilExpiry, 1000); // Minimum 1 second
 }
 
+
 app.post('/api/analyze-songs-batch', async (req, res) => {
-
-  let aborted = false;
-
-  req.on('aborted', () => {
-    aborted = true;
-    console.log('Client aborted request');
-  });
-
-  const isAborted = () => aborted;
-
-  const { songs, chosenFilters, batchContext, sessionId } = req.body;
-
-  if (!sessionId) {
-    return res.status(400).json({ error: 'Missing sessionId' });
-  }
-
-  const profanityFilter = chosenFilters?.find(filter => filter.label === "Profanity");
-  const violenceFilter = chosenFilters?.find(filter => filter.label === "Violence");
-  const sexualFilter = chosenFilters?.find(filter => filter.label === "Sexual");
-  const selfHarmFilter = chosenFilters?.find(filter => filter.label === "Self-Harm");
-  
-  const shouldCheckProfanity = !!profanityFilter;
-  const shouldCheckModeration = !!(violenceFilter || sexualFilter || selfHarmFilter);
-
-  const whitelist = profanityFilter?.options?.whitelist || [];
-  const blacklist = profanityFilter?.options?.blacklist || [];
-
-  const progressRef = db.collection('progress').doc(sessionId);
-
-
-  // Initialize progress on first batch
-  if (!batchContext || batchContext.batchNumber === 1) {
-    await progressRef.set({
-      totalSongs: batchContext?.totalSongs || songs.length,
-      totalModerationChunks: 0,
-      processedModerationSongs: 0,
-      processedProfanitySongs: 0,
-      shouldCheckModeration: shouldCheckModeration,
-      shouldCheckProfanity: shouldCheckProfanity,
-      currentPhase: 'start',
-      startTime: admin.firestore.FieldValue.serverTimestamp(),
-      batchNumber: 1,
-      totalBatches: batchContext?.totalBatches || 1,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-  }
-  
-   // Update batch number
-   if (batchContext) {
-    await progressRef.update({
-      batchNumber: batchContext.batchNumber,
-      totalBatches: batchContext.totalBatches
-    });
-  }
-
-
-  if (!songs || !Array.isArray(songs) || songs.length === 0) {
-    return res.status(400).json({ error: 'Missing songs array or empty array' });
-  }
-
   try {
-    console.log(`Analyzing batch of ${songs.length} songs`);
-    const lyricsResults = await Promise.all(
-      songs.map(async (song, index) => {
-        try {
-          let lyrics = await getLyrics(song.songTitle, song.songArtists, song.songAlbum, song.songDuration);
-           lyrics = prepareLyricsForModeration(lyrics);
-          return { index, song, lyrics: lyrics?.text.trim() ? lyrics : null, tokens: lyrics.tokens, error: null };
-        } catch (error) {
-          console.warn(`Failed to get lyrics for ${song.songTitle} by ${song.songArtists[0]}:`, error.message);
-          return { index, song, lyrics: null, error: error.message };
-        }
-      })
-    );
-  const songsWithLyrics = lyricsResults.filter(result => result.lyrics && result.lyrics !== "instrumental");
-  const songsWithoutLyrics = lyricsResults.filter(result => !result.lyrics);
-  const songsInstrumental= lyricsResults.filter(result => result.lyrics === "instrumental");
-    
-  console.log(`Fetched lyrics for ${lyricsResults.filter(r => r.lyrics).length}/${songs.length} songs`);
+    const { songs, chosenFilters, batchContext, sessionId } = req.body;
 
+    if (!songs || !Array.isArray(songs) || songs.length === 0) {
+      return res.status(400).json({
+        error: 'Invalid request',
+        details: 'Songs array is required'
+      });
+    }
+
+    console.log(`Processing batch ${batchContext?.batchNumber || 'unknown'} with ${songs.length} songs`);
+
+
+    const shouldCheckModeration = chosenFilters.find(filter => filter.id === "sexual") || chosenFilters.find(filter => filter.id === "violence") || chosenFilters.find(filter => filter.id === "self-harm");
+    const shouldCheckProfanity = chosenFilters.find(filter => filter.id === "profanity")
+
+    const profanityFilter = chosenFilters?.find(filter => filter.id === "profanity");
+    const whitelist = profanityFilter?.options?.whitelist || [];
+    const blacklist = profanityFilter?.options?.blacklist || [];
+
+
+    // Initialize results array
     const analysisResults = new Array(songs.length);
-    
-    if (songsWithLyrics.length > 0) {
 
+    // Fetch lyrics for all songs
+    console.log('Fetching lyrics...');
+    const lyricsPromises = songs.map((song, idx) => 
+      getLyrics(song.songTitle, song.songArtists, song.songAlbum, song.songDuration)
+        .then(lyrics => ({ index: idx, song, lyrics, error: null }))
+        .catch(error => ({ index: idx, song, lyrics: null, error: error.message }))
+    );
+
+    const lyricsResults = await Promise.all(lyricsPromises);
+
+    // Categorize songs
+    const songsWithLyrics = [];
+    const songsWithoutLyrics = [];
+    const songsInstrumental = [];
+
+    lyricsResults.forEach(result => {
+      if (result.song.isInstrumental) {
+        songsInstrumental.push(result);
+      } else if (result.lyrics) {
+        songsWithLyrics.push(result);
+      } else {
+        songsWithoutLyrics.push(result);
+      }
+    });
+
+    console.log(`Lyrics fetched: ${songsWithLyrics.length} with lyrics, ${songsWithoutLyrics.length} without, ${songsInstrumental.length} instrumental`);
+
+    // Process songs with lyrics
+    if (songsWithLyrics.length > 0) {
       const lyricsArray = songsWithLyrics.map(s => s.lyrics);
 
-      // Update phase
-      await progressRef.update({ currentPhase: 'starting-analysis' });
+      // Moderation check
+      let moderationResults = [];
+      if (shouldCheckModeration) {
+        console.log('Starting moderation checks...');
 
-      async function checkModerationBatch(lyricsArray, isAborted) {
-        const chunks = chunkLyricsByTokens(lyricsArray);
-        const results = [];
-      
-        // setting total chunks to progress firestore
-        await progressRef.update({ totalModerationChunks: chunks.length });
-      
-      
-        for (let i = 0; i < chunks.length; i++) {
-          // stop new chunks if it was aborted 
-          if (isAborted()) {
-            console.log('Moderation aborted — stopping before next chunk');
-            break; 
-          }
-          console.log("current chunk = ", i)
-      
-          const chunk = chunks[i];
-      
-      
-          try {
-            const moderation = await retry(() => runModeration(chunk));
-      
-            await progressRef.update({
-              processedModerationSongs: admin.firestore.FieldValue.increment(chunk.length)
+        // Prepare all lyrics
+        const preparedLyrics = lyricsArray.map(lyrics => prepareLyricsForModeration(lyrics)).filter(Boolean);
+
+        if (preparedLyrics.length === 0) {
+          moderationResults = songsWithLyrics.map(() => ({ 
+            sexual: null, 
+            violence: null, 
+            self_harm: null, 
+            status: 'no-lyrics' 
+          }));
+        } else {
+          // Calculate total tokens needed
+          const tokensNeeded = preparedLyrics.reduce((sum, l) => sum + l.tokens, 0);
+          console.log(`Total tokens needed: ${tokensNeeded}`);
+
+          // Check rate limit - if not available, return 429 immediately
+          if (!tryAcquireTokens(tokensNeeded)) {
+            const waitTime = getWaitTime(tokensNeeded);
+            console.log(`Rate limited, need to wait ${waitTime}ms`);
+            return res.status(429).json({
+              error: 'rate_limited',
+              retryAfterMs: Math.ceil(waitTime)
             });
-      
-      
-            const chunkResults = moderation.results.map(r => ({
-              sexual: r.category_scores?.sexual ?? null,
-              violence: r.category_scores?.violence ?? null,
-              self_harm: r.category_scores?.['self-harm'] ?? null,
-              status: 'success'
-            }));
-      
-            results.push(...chunkResults);
-          } catch (err) {
-            const failedResults = chunk.map(() => ({
-              sexual: null,
-              violence: null,
-              self_harm: null,
-              status: 'failed'
-            }));
-      
-            results.push(...failedResults);
+          }
+
+          // Call OpenAI once with all prepared lyrics
+          try {
+              let chunk_result = await runModeration(preparedLyrics);
+              moderationResults = chunk_result.map((result) => ({   
+                sexual: result.category_scores?.sexual ?? null,
+                violence: result.category_scores?.violence ?? null,
+                self_harm: result.category_scores?.['self-harm'] ?? null,
+                status: 'success' 
+              }));
+
+            console.log('Moderation checks complete');
+
+          } catch (error) {
+            console.error('OpenAI moderation error:', error);
+
+            // If OpenAI returns rate limit, pass it to frontend
+            if (error.status === 429 || error.code === 'rate_limit_exceeded') {
+              return res.status(429).json({
+                error: 'rate_limited',
+                retryAfterMs: 3000
+              });
+            }else{
+              moderationResults = preparedLyrics.map(() => ({
+                sexual: null,
+                violence: null,
+                self_harm: null,
+                status: 'failed'
+              }));
+            }
+
           }
         }
-      
-        return results;
+      } else {
+        moderationResults = songsWithLyrics.map(() => ({
+          sexual: null,
+          violence: null,
+          self_harm: null,
+          status: 'success'
+        }));
       }
-            
 
-      const moderationPromise = shouldCheckModeration
-      ? (async () => {
+      // Profanity check (runs in parallel, no rate limiting needed)
+      let profanityResults = [];
+      if (shouldCheckProfanity) {
+        console.log('Starting profanity checks...');
+        profanityResults = lyricsArray.map(lyrics => {
           try {
-            console.log('Moderation check started');
-            return await checkModerationBatch(lyricsArray, isAborted );
-          } catch (e) {
-            console.error('Moderation check failed', e);
-            return [];
+            const result = checkProfanity(lyrics, whitelist, blacklist);
+            return result
+          } catch (error) {
+            console.error('Profanity check error:', error);
+            return null;
           }
-        })()
-      : Promise.resolve([]);
-    
-      const profanityPromise = shouldCheckProfanity
-      ? (async () => {
-          console.log('Profanity check started');
-          const profanityPromises = lyricsArray.map(lyrics =>
-            Promise.resolve()
-              .then(() => {
-                return checkProfanity(lyrics.text, whitelist, blacklist);
-              })
-              .catch(error => {
-                console.error('Profanity check failed:', error.message);
-                return null;
-              })
-          );
-    
-          const results = await Promise.all(profanityPromises);
-          console.log('Profanity finished');
-          await progressRef.update({
-            processedProfanitySongs: admin.firestore.FieldValue.increment(lyricsArray.length)
-          });
-          return results;
-        })()
-      : Promise.resolve([]);
-    
-    
-    // process in parallel
-    const [moderationResults, profanityResults] = await Promise.all([
-      moderationPromise,
-      profanityPromise
-    ]);
-    
+        });
+
+        console.log('Profanity checks complete');
+
+      } else {
+        profanityResults = songsWithLyrics.map(() => null);
+      }
 
       // Combine results
-      songsWithLyrics.forEach(({ index, song, lyrics }, i) => {
-        const moderationResult = shouldCheckModeration 
-          ? moderationResults[i] || { sexual: null, violence: null, self_harm: null, status: 'failed' }
-          : { sexual: null, violence: null, self_harm: null, status: 'success' };
-          
-        const profanityResult = shouldCheckProfanity ? profanityResults[i] : null;
-
+      songsWithLyrics.forEach(({ index }, i) => {
         analysisResults[index] = {
-          status: moderationResult.status,
-          // lyrics: lyrics,
-          sexually_explicit: moderationResult.sexual,
-          profanity: profanityResult,
-          violence: moderationResult.violence,
-          self_harm: moderationResult.self_harm
+          status: moderationResults[i].status,
+          sexually_explicit: moderationResults[i].sexual,
+          profanity: profanityResults[i],
+          violence: moderationResults[i].violence,
+          self_harm: moderationResults[i].self_harm
         };
       });
     }
 
     // Handle songs without lyrics
-    songsWithoutLyrics.forEach(({ index, song, error }) => {
+    songsWithoutLyrics.forEach(({ index, error }) => {
       analysisResults[index] = {
         status: 'no-lyrics',
-        // lyrics: null,
         sexually_explicit: null,
         profanity: null,
         violence: null,
@@ -706,32 +658,33 @@ app.post('/api/analyze-songs-batch', async (req, res) => {
       };
     });
 
-    songsInstrumental.forEach(({ index, song }) => {
+    // Handle instrumental songs
+    songsInstrumental.forEach(({ index }) => {
       analysisResults[index] = {
         status: 'instrumental',
-        lyrics: null,
         sexually_explicit: null,
         profanity: null,
         violence: null,
         self_harm: null
       };
     });
-    
-    console.log(`Chunk analysis complete for ${songs.length} songs`);
-    
+
+    console.log(`Batch ${batchContext?.batchNumber || 'unknown'} complete`);
+
     res.json({
       results: analysisResults,
       summary: {
         total: songs.length,
         withLyrics: songsWithLyrics.length,
         withoutLyrics: songsWithoutLyrics.length,
+        instrumental: songsInstrumental.length
       }
     });
 
   } catch (error) {
-    console.error("Error in chunk song analysis:", error);
+    console.error("Error in batch song analysis:", error);
     res.status(500).json({
-      error: 'Failed to analyze songs chunk',
+      error: 'Failed to analyze songs batch',
       details: error.message
     });
   }
@@ -800,7 +753,7 @@ function sampleLyrics(lines, maxTokens = 650) {
     tokens = estimateTokens(result);
   }
 
-  return result;
+  return {text: result, tokens: tokens};
 }
 
 
@@ -809,59 +762,22 @@ function prepareLyricsForModeration(lyrics) {
 
   let lines = removeDuplicateLines(lyrics);
   lines = removeFillerWords(lines);
-  const text = lines.join('\n');
+
+  const sample_lyrics = sampleLyrics(lines);
 
   return {
-    text,
-    tokens: encode(text).length
+    text: sample_lyrics.text,
+    tokens: sample_lyrics.tokens
   };
 }
 
 
-function chunkLyricsByTokens(lyricsObjects, maxTokens = 2500) {
-  const chunks = [];
-  let current = [];
-  let tokenSum = 0;
-
-  for (const l of lyricsObjects) {
-    let text = l.text;
-    let tokens = l.tokens;
-
-    if (tokens > 700) {
-      const lines = text.split('\n').filter(Boolean);
-      text = sampleLyrics(lines);
-      tokens = encode(text).length;
-    }
-
-    if (tokenSum + tokens > maxTokens) {
-      chunks.push(current);
-      current = [{ text, tokens }];
-      tokenSum = tokens;
-    } else {
-      current.push({ text, tokens });
-      tokenSum += tokens;
-    }
-  }
-
-  if (current.length) chunks.push(current);
-  return chunks;
-}
-
-
-
 async function runModeration(chunk) {
-  const chunkTextArray = chunk.map(c => c.text)
-
-  const tokensNeeded = chunk.reduce((a, c) => a + c.tokens, 0);
-
-  console.log("TOKENS NEEDED FOR CHUNK:", tokensNeeded)
-
-  await acquireTokens(tokensNeeded);
-
-  return await openai.moderations.create({
+  let result = await openai.moderations.create({
     model: 'omni-moderation-latest',
-    input: chunkTextArray,
+    input: chunk.map(c => c.text),
   });
+  return result.results
 }
 
 
